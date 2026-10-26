@@ -1,0 +1,1231 @@
+# SPDX-FileCopyrightText: 2026 Slavick
+# SPDX-License-Identifier: MIT
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 Slavick
+# This file is distributed under the same license as the finder-gnome package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: finder-gnome 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-26 22:33+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/applications.rs:56
+msgid "Search applications"
+msgstr ""
+
+#: src/applications.rs:73 src/applications.rs:302
+msgid "No applications installed"
+msgstr ""
+
+#: src/applications.rs:79 src/ui.rs:1794
+msgid "Loading applications…"
+msgstr ""
+
+#: src/applications.rs:130
+msgid "Launch"
+msgstr ""
+
+#: src/applications.rs:304
+msgid "No matching applications"
+msgstr ""
+
+#: src/applications.rs:332 src/preview.rs:529 src/ui.rs:3400
+msgid "Open"
+msgstr ""
+
+#: src/applications.rs:333 src/properties.rs:12 src/ui/trash.rs:107
+#: src/ui.rs:3408
+msgid "Properties"
+msgstr ""
+
+#: src/applications.rs:372
+msgid "Unable to launch {application}: {error}"
+msgstr ""
+
+#: src/catalog.rs:86
+msgid "Enter a tag name."
+msgstr ""
+
+#: src/catalog.rs:92
+msgid "Choose one of the supported tag colors."
+msgstr ""
+
+#: src/catalog.rs:111
+msgid "A tag with this name already exists."
+msgstr ""
+
+#: src/connections.rs:30 src/connections.rs:142 src/connections.rs:151
+#: src/connections.rs:159 src/connections.rs:179 src/ui/system.rs:381
+msgid "Connect"
+msgstr ""
+
+#: src/connections.rs:32
+msgid "Unsupported or unsafe folder address."
+msgstr ""
+
+#: src/connections.rs:181
+msgid "Connection cancelled."
+msgstr ""
+
+#: src/directory.rs:117 src/directory.rs:166
+msgid "Read folder"
+msgstr ""
+
+#: src/directory.rs:187
+msgid "This location was disconnected. Connect again and retry."
+msgstr ""
+
+#: src/directory.rs:195
+msgid "Search stopped. Results collected so far are kept."
+msgstr ""
+
+#: src/directory.rs:237
+msgid "Some tagged files are unavailable. Their tags have been kept."
+msgstr ""
+
+#: src/directory.rs:364
+msgid "Search stopped at 20,000 matches. Refine your query."
+msgstr ""
+
+#: src/directory.rs:368
+msgid "Search finished. Some folders could not be read."
+msgstr ""
+
+#: src/dnd.rs:46
+msgid "The dropped file list is too large."
+msgstr ""
+
+#: src/dnd.rs:55
+msgid "Only local, SMB and SFTP files can be dropped here."
+msgstr ""
+
+#: src/errors.rs:62 src/operations.rs:171
+msgid "Operation cancelled."
+msgstr ""
+
+#: src/errors.rs:63
+msgid "The location is disconnected. Connect again and retry."
+msgstr ""
+
+#: src/errors.rs:64
+msgid "Authentication was not completed."
+msgstr ""
+
+#: src/errors.rs:65
+msgid "You do not have permission for this action."
+msgstr ""
+
+#: src/errors.rs:66
+msgid "There is not enough free space."
+msgstr ""
+
+#: src/errors.rs:67
+msgid "This location does not support this action."
+msgstr ""
+
+#: src/errors.rs:68
+msgid "The item is no longer available."
+msgstr ""
+
+#: src/errors.rs:69 src/ui.rs:3147
+msgid "Unable to complete the action"
+msgstr ""
+
+#: src/files.rs:72
+msgid "Original: {path} · Deleted: {date}"
+msgstr ""
+
+#: src/files.rs:98 src/properties.rs:148
+msgid "Folder"
+msgstr ""
+
+#: src/files.rs:103 src/properties.rs:154
+msgid "File"
+msgstr ""
+
+#: src/files.rs:167
+msgid "Enter a name without slashes. The names “.” and “..” are not allowed."
+msgstr ""
+
+#: src/files.rs:197
+msgid "Enter a valid folder URI."
+msgstr ""
+
+#: src/files.rs:202
+msgid "Use a local path, smb:// or sftp:// address."
+msgstr ""
+
+#: src/files.rs:206
+msgid "Do not include passwords in addresses. Use the connection dialog."
+msgstr ""
+
+#: src/files.rs:210
+msgid "Enter a server hostname."
+msgstr ""
+
+#: src/files.rs:227
+msgid "Enter an absolute folder path."
+msgstr ""
+
+#: src/files.rs:246 src/files.rs:261
+msgid "The clipboard does not contain files."
+msgstr ""
+
+#: src/operations.rs:43 src/ui.rs:2806 src/ui.rs:3410
+msgid "New Folder"
+msgstr ""
+
+#: src/operations.rs:44 src/ui.rs:2804 src/ui.rs:2814 src/ui.rs:3420
+msgid "Rename"
+msgstr ""
+
+#: src/operations.rs:45 src/ui/file_commands.rs:99
+msgid "Move"
+msgstr ""
+
+#: src/operations.rs:46 src/ui/file_commands.rs:99 src/ui.rs:3414
+msgid "Copy"
+msgstr ""
+
+#: src/operations.rs:47
+msgid "Restore from Trash"
+msgstr ""
+
+#: src/operations.rs:48
+msgid "Delete from Trash"
+msgstr ""
+
+#: src/operations.rs:49 src/ui.rs:3441
+msgid "Move to Trash"
+msgstr ""
+
+#: src/operations.rs:50 src/ui.rs:2881
+msgid "Delete Permanently"
+msgstr ""
+
+#: src/operations.rs:203
+msgid "The source and destination are the same."
+msgstr ""
+
+#: src/operations.rs:223
+msgid "The operation window was closed."
+msgstr ""
+
+#: src/operations.rs:256
+msgid "This conflict cannot be resolved with that action."
+msgstr ""
+
+#: src/operations.rs:274
+msgid "File operation"
+msgstr ""
+
+#: src/operations.rs:308 src/operations.rs:463
+msgid "The folder tree is too deep."
+msgstr ""
+
+#: src/operations.rs:422 src/operations.rs:514
+msgid "The destination has no parent folder."
+msgstr ""
+
+#: src/operations.rs:515 src/operations.rs:615 src/operations.rs:701
+msgid "The file has no name."
+msgstr ""
+
+#: src/operations.rs:532 src/operations.rs:563
+msgid "Unsupported file location."
+msgstr ""
+
+#: src/operations.rs:535 src/operations.rs:542 src/operations.rs:612
+msgid "Operations on the filesystem root are not allowed."
+msgstr ""
+
+#: src/operations.rs:566 src/operations.rs:618
+msgid "A folder cannot be copied or moved into itself."
+msgstr ""
+
+#: src/operations.rs:595
+msgid ""
+"Choose a directory path without symbolic-link aliases for this transfer."
+msgstr ""
+
+#: src/operations.rs:605 src/operations.rs:608
+msgid "Only local files are supported in this version."
+msgstr ""
+
+#: src/operations.rs:630
+msgid "Only top-level Trash items can be restored or permanently deleted here."
+msgstr ""
+
+#: src/operations.rs:677
+msgid "The file has no parent folder."
+msgstr ""
+
+#: src/operations.rs:679
+msgid "An item with that name already exists."
+msgstr ""
+
+#: src/operations.rs:736
+msgid "The original location is unavailable. Use Restore To instead."
+msgstr ""
+
+#: src/operations.rs:741
+msgid "Choose a local, SMB or SFTP folder."
+msgstr ""
+
+#: src/operations.rs:746
+msgid "The original file has no name."
+msgstr ""
+
+#: src/preview.rs:209 src/preview.rs:265
+msgid "Remote previews are limited to 50 MiB per file."
+msgstr ""
+
+#: src/preview.rs:309
+msgid "Folder contents can be opened in the file browser."
+msgstr ""
+
+#: src/preview.rs:341
+msgid "Only local previews are supported."
+msgstr ""
+
+#: src/preview.rs:343
+msgid "The image format is not supported or the file is damaged."
+msgstr ""
+
+#: src/preview.rs:345
+msgid "The image exceeds the 40 megapixel preview limit."
+msgstr ""
+
+#: src/preview.rs:358 src/preview.rs:451
+msgid "Preview cancelled."
+msgstr ""
+
+#: src/preview.rs:405
+msgid "This file does not contain plain text."
+msgstr ""
+
+#: src/preview.rs:412
+msgid "A preview is not available for this file type."
+msgstr ""
+
+#: src/preview.rs:426
+msgid "The PDF contains no readable pages."
+msgstr ""
+
+#: src/preview.rs:429
+msgid "Invalid PDF page dimensions."
+msgstr ""
+
+#: src/preview.rs:520
+msgid "Previous Page"
+msgstr ""
+
+#: src/preview.rs:524
+msgid "Next Page"
+msgstr ""
+
+#: src/preview.rs:528
+msgid "Actual Size"
+msgstr ""
+
+#: src/preview.rs:530 src/ui.rs:3401
+msgid "Open With…"
+msgstr ""
+
+#: src/preview.rs:683
+msgid "Preview unavailable"
+msgstr ""
+
+#: src/preview.rs:730
+msgid "Select a file to preview"
+msgstr ""
+
+#: src/preview.rs:736
+msgid "{kind} · {size} · {modified}"
+msgstr ""
+
+#: src/preview.rs:743
+msgid "Preview — download on request"
+msgstr ""
+
+#: src/preview.rs:801
+msgid "Page {page} of {pages}"
+msgstr ""
+
+#: src/preview.rs:826
+msgid "Showing the first 256 KiB."
+msgstr ""
+
+#: src/preview.rs:847
+msgid "Open With"
+msgstr ""
+
+#: src/preview.rs:848 src/preview.rs:884 src/properties.rs:14
+#: src/ui/system.rs:775 src/ui/system.rs:886 src/ui.rs:3165
+msgid "Close"
+msgstr ""
+
+#: src/preview.rs:881
+msgid "Unable to open file"
+msgstr ""
+
+#: src/properties/permissions.rs:34
+msgid "Permissions cannot be changed for this item."
+msgstr ""
+
+#: src/properties/permissions.rs:69
+msgid "Permissions"
+msgstr ""
+
+#: src/properties/permissions.rs:81
+msgid "Editing permissions is unavailable for this item or backend."
+msgstr ""
+
+#: src/properties/permissions.rs:100
+msgid "Changes apply to this item."
+msgstr ""
+
+#: src/properties/permissions.rs:110 src/properties/permissions.rs:145
+msgid "Read"
+msgstr ""
+
+#: src/properties/permissions.rs:111 src/properties/permissions.rs:146
+msgid "Write"
+msgstr ""
+
+#: src/properties/permissions.rs:115
+msgid "Access"
+msgstr ""
+
+#: src/properties/permissions.rs:117
+msgid "Execute"
+msgstr ""
+
+#: src/properties/permissions.rs:123
+msgid "Apply Permissions"
+msgstr ""
+
+#: src/properties/permissions.rs:130 src/properties.rs:197
+msgid "Owner"
+msgstr ""
+
+#: src/properties/permissions.rs:131 src/properties.rs:198
+msgid "Group"
+msgstr ""
+
+#: src/properties/permissions.rs:132
+msgid "Others"
+msgstr ""
+
+#: src/properties/permissions.rs:147
+msgid "Execute / access folder"
+msgstr ""
+
+#: src/properties/permissions.rs:182
+msgid "Saving permissions…"
+msgstr ""
+
+#: src/properties/permissions.rs:203
+msgid "Permissions updated: {mode}"
+msgstr ""
+
+#: src/properties/permissions.rs:209
+msgid "Change permissions"
+msgstr ""
+
+#: src/properties.rs:57 src/properties.rs:141 src/ui.rs:1134 src/ui.rs:2550
+msgid "Name"
+msgstr ""
+
+#: src/properties.rs:59
+msgid "Description"
+msgstr ""
+
+#: src/properties.rs:65
+msgid "Application ID"
+msgstr ""
+
+#: src/properties.rs:71
+msgid "Executable"
+msgstr ""
+
+#: src/properties.rs:79
+msgid "Desktop File"
+msgstr ""
+
+#: src/properties.rs:86
+msgid "Desktop File Properties…"
+msgstr ""
+
+#: src/properties.rs:102 src/ui.rs:358 src/ui.rs:1925
+msgid "Loading…"
+msgstr ""
+
+#: src/properties.rs:131
+msgid "Unable to read properties"
+msgstr ""
+
+#: src/properties.rs:132
+msgid "Read properties"
+msgstr ""
+
+#: src/properties.rs:142
+msgid "Location"
+msgstr ""
+
+#: src/properties.rs:144
+msgid "Type"
+msgstr ""
+
+#: src/properties.rs:146
+msgid "Symbolic Link"
+msgstr ""
+
+#: src/properties.rs:160 src/properties.rs:170 src/properties.rs:229
+#: src/ui.rs:1135 src/ui.rs:1212 src/ui.rs:2551
+msgid "Size"
+msgstr ""
+
+#: src/properties.rs:165
+msgid "bytes"
+msgstr ""
+
+#: src/properties.rs:170 src/properties.rs:171
+msgid "Calculating…"
+msgstr ""
+
+#: src/properties.rs:171 src/properties.rs:177 src/properties.rs:230
+msgid "Size on Disk"
+msgstr ""
+
+#: src/properties.rs:182
+msgid "Modified"
+msgstr ""
+
+#: src/properties.rs:183
+msgid "Created"
+msgstr ""
+
+#: src/properties.rs:184
+msgid "Accessed"
+msgstr ""
+
+#: src/properties.rs:199
+msgid "Deleted"
+msgstr ""
+
+#: src/properties.rs:206
+msgid "Link Target"
+msgstr ""
+
+#: src/properties.rs:209
+msgid "Original Location"
+msgstr ""
+
+#: src/properties.rs:231
+msgid "Stop Calculating"
+msgstr ""
+
+#: src/properties.rs:243 src/properties.rs:244
+msgid "Calculating… {size}"
+msgstr ""
+
+#: src/properties.rs:252
+msgid "Calculate folder size"
+msgstr ""
+
+#: src/properties.rs:253
+msgid "Unavailable"
+msgstr ""
+
+#: src/properties.rs:259
+msgid "{count} file"
+msgid_plural "{count} files"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/properties.rs:259
+msgid "{count} folder"
+msgid_plural "{count} folders"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/properties.rs:261
+msgid "Partial result"
+msgstr ""
+
+#: src/properties.rs:261
+msgid "Complete"
+msgstr ""
+
+#: src/properties.rs:264
+msgid "At least {size}; some entries do not report allocated size."
+msgstr ""
+
+#: src/properties.rs:267
+msgid ""
+"Stopped or incomplete: {unreadable} unreadable entries; {skipped} mount "
+"boundaries or depth limits."
+msgstr ""
+
+#: src/ui/file_commands.rs:98
+msgid "Move To"
+msgstr ""
+
+#: src/ui/file_commands.rs:98
+msgid "Copy To"
+msgstr ""
+
+#: src/ui/file_commands.rs:131
+msgid ""
+"Could not start Archive Manager. Install the “file-roller” package.\n"
+"\n"
+"{error}"
+msgstr ""
+
+#: src/ui/file_commands.rs:141
+msgid ""
+"Archive Manager could not complete the operation.\n"
+"\n"
+"{error}"
+msgstr ""
+
+#: src/ui/system.rs:58
+msgid "Select this tab to connect."
+msgstr ""
+
+#: src/ui/system.rs:160 src/ui.rs:1746
+msgid "Search Results"
+msgstr ""
+
+#: src/ui/system.rs:164 src/ui.rs:1747
+msgid "Tagged Files"
+msgstr ""
+
+#: src/ui/system.rs:359
+msgid "Connect to Server"
+msgstr ""
+
+#: src/ui/system.rs:359
+msgid ""
+"Enter an smb:// or sftp:// address. Passwords are requested securely by the "
+"system."
+msgstr ""
+
+#: src/ui/system.rs:381 src/ui/system.rs:523 src/ui/system.rs:910
+#: src/ui/trash.rs:85 src/ui.rs:2810 src/ui.rs:2880
+msgid "Cancel"
+msgstr ""
+
+#: src/ui/system.rs:405
+msgid "Locations"
+msgstr ""
+
+#: src/ui/system.rs:406 src/ui.rs:3450
+msgid "Connect to Server…"
+msgstr ""
+
+#: src/ui/system.rs:439
+msgid "Disconnect or Eject"
+msgstr ""
+
+#: src/ui/system.rs:516
+msgid "Eject Disk?"
+msgstr ""
+
+#: src/ui/system.rs:518
+msgid "Disconnect Disk?"
+msgstr ""
+
+#: src/ui/system.rs:520
+msgid "Disconnect “{name}” from the system?"
+msgstr ""
+
+#: src/ui/system.rs:526
+msgid "Eject"
+msgstr ""
+
+#: src/ui/system.rs:526
+msgid "Disconnect"
+msgstr ""
+
+#: src/ui/system.rs:541 src/ui.rs:993
+msgid "File operations are running"
+msgstr ""
+
+#: src/ui/system.rs:543
+msgid "Wait, or cancel running operations before disconnecting this device."
+msgstr ""
+
+#: src/ui/system.rs:547 src/ui.rs:998
+msgid "Stay"
+msgstr ""
+
+#: src/ui/system.rs:548
+msgid "Cancel Operations and Disconnect"
+msgstr ""
+
+#: src/ui/system.rs:600
+msgid ""
+"Tags could not be updated. File operations remain available.\n"
+"{error}"
+msgstr ""
+
+#: src/ui/system.rs:624 src/ui/system.rs:737
+msgid "Tags"
+msgstr ""
+
+#: src/ui/system.rs:648 src/ui.rs:3452
+msgid "Manage Tags…"
+msgstr ""
+
+#: src/ui/system.rs:738
+msgid "Changes apply immediately to the selected files."
+msgstr ""
+
+#: src/ui/system.rs:791
+msgid "Manage Tags"
+msgstr ""
+
+#: src/ui/system.rs:793
+msgid "Deleting a tag removes its assignments. Files are kept."
+msgstr ""
+
+#: src/ui/system.rs:800
+msgid "New tag name"
+msgstr ""
+
+#: src/ui/system.rs:811
+msgid "Red"
+msgstr ""
+
+#: src/ui/system.rs:812
+msgid "Orange"
+msgstr ""
+
+#: src/ui/system.rs:813
+msgid "Yellow"
+msgstr ""
+
+#: src/ui/system.rs:814
+msgid "Green"
+msgstr ""
+
+#: src/ui/system.rs:815
+msgid "Blue"
+msgstr ""
+
+#: src/ui/system.rs:816
+msgid "Purple"
+msgstr ""
+
+#: src/ui/system.rs:817
+msgid "Gray"
+msgstr ""
+
+#: src/ui/system.rs:823
+msgid "Save"
+msgstr ""
+
+#: src/ui/system.rs:854
+msgid "Delete"
+msgstr ""
+
+#: src/ui/system.rs:919
+msgid "Retry Failed Items"
+msgstr ""
+
+#: src/ui/system.rs:993
+msgid "The file operation worker is unavailable."
+msgstr ""
+
+#: src/ui/trash.rs:32
+msgid "Restore To"
+msgstr ""
+
+#: src/ui/trash.rs:33 src/ui/trash.rs:108 src/ui.rs:1974 src/ui.rs:3431
+msgid "Restore"
+msgstr ""
+
+#: src/ui/trash.rs:83
+msgid "Empty Trash?"
+msgstr ""
+
+#: src/ui/trash.rs:84
+msgid "Permanently delete all {count} items in Trash? This cannot be undone."
+msgstr ""
+
+#: src/ui/trash.rs:85
+msgid "Empty Trash"
+msgstr ""
+
+#: src/ui/trash.rs:109 src/ui.rs:3432
+msgid "Restore To…"
+msgstr ""
+
+#: src/ui/trash.rs:110 src/ui.rs:3419
+msgid "Select All"
+msgstr ""
+
+#: src/ui/trash.rs:111 src/ui.rs:3442
+msgid "Delete Permanently…"
+msgstr ""
+
+#: src/ui/trash.rs:112 src/ui.rs:1980 src/ui.rs:3433
+msgid "Empty Trash…"
+msgstr ""
+
+#: src/ui.rs:183 src/ui.rs:649 src/ui.rs:3461
+msgid "New Tab"
+msgstr ""
+
+#: src/ui.rs:188
+msgid "Back"
+msgstr ""
+
+#: src/ui.rs:189
+msgid "Forward"
+msgstr ""
+
+#: src/ui.rs:190
+msgid "Parent Folder"
+msgstr ""
+
+#: src/ui.rs:197
+msgid "Enter a folder path"
+msgstr ""
+
+#: src/ui.rs:210 src/ui.rs:1110
+msgid "Icons"
+msgstr ""
+
+#: src/ui.rs:211 src/ui.rs:1111
+msgid "List"
+msgstr ""
+
+#: src/ui.rs:212 src/ui.rs:1112
+msgid "Columns"
+msgstr ""
+
+#: src/ui.rs:213 src/ui.rs:1113
+msgid "Gallery"
+msgstr ""
+
+#: src/ui.rs:230
+msgid "Actions"
+msgstr ""
+
+#: src/ui.rs:236
+msgid "Search"
+msgstr ""
+
+#: src/ui.rs:253
+msgid "Favorites"
+msgstr ""
+
+#: src/ui.rs:286
+msgid "Search filenames…"
+msgstr ""
+
+#: src/ui.rs:289 src/ui.rs:1104
+msgid "This Folder"
+msgstr ""
+
+#: src/ui.rs:289 src/ui.rs:315 src/ui.rs:1489
+msgid "Home"
+msgstr ""
+
+#: src/ui.rs:295
+msgid "Stop Search"
+msgstr ""
+
+#: src/ui.rs:300
+msgid "Close Search"
+msgstr ""
+
+#: src/ui.rs:332 src/ui.rs:2926 src/ui.rs:3016
+msgid "Cancel All"
+msgstr ""
+
+#: src/ui.rs:353
+msgid "Background Tasks"
+msgstr ""
+
+#: src/ui.rs:445 src/ui.rs:680 src/ui.rs:1587
+msgid "Use a local path, smb:// or sftp:// address without a password."
+msgstr ""
+
+#: src/ui.rs:455
+msgid "Unable to save application state: {error}"
+msgstr ""
+
+#: src/ui.rs:469
+msgid ""
+"Some saved settings could not be read. Defaults were loaded.\n"
+"{files}"
+msgstr ""
+
+#: src/ui.rs:582 src/ui.rs:3462
+msgid "Duplicate Tab"
+msgstr ""
+
+#: src/ui.rs:583 src/ui.rs:3463
+msgid "Close Tab"
+msgstr ""
+
+#: src/ui.rs:694 src/ui.rs:697 src/ui.rs:702 src/ui.rs:1494 src/ui.rs:1658
+#: src/ui.rs:1660 src/ui.rs:1662
+msgid "Applications"
+msgstr ""
+
+#: src/ui.rs:995
+msgid "Closing will cancel pending work. Completed changes will be kept."
+msgstr ""
+
+#: src/ui.rs:998
+msgid "Cancel and Close"
+msgstr ""
+
+#: src/ui.rs:1018
+msgid "Preferences"
+msgstr ""
+
+#: src/ui.rs:1022
+msgid "General"
+msgstr ""
+
+#: src/ui.rs:1025
+msgid "Appearance"
+msgstr ""
+
+#: src/ui.rs:1027
+msgid "System"
+msgstr ""
+
+#: src/ui.rs:1028
+msgid "Light"
+msgstr ""
+
+#: src/ui.rs:1029
+msgid "Dark"
+msgstr ""
+
+#: src/ui.rs:1049
+msgid "Restore tabs on startup"
+msgstr ""
+
+#: src/ui.rs:1100
+msgid "View Options"
+msgstr ""
+
+#: src/ui.rs:1108
+msgid "View"
+msgstr ""
+
+#: src/ui.rs:1132
+msgid "Sort By"
+msgstr ""
+
+#: src/ui.rs:1136 src/ui.rs:1213 src/ui.rs:2552
+msgid "Kind"
+msgstr ""
+
+#: src/ui.rs:1137 src/ui.rs:1214 src/ui.rs:2553
+msgid "Date Modified"
+msgstr ""
+
+#: src/ui.rs:1149
+msgid "Descending"
+msgstr ""
+
+#: src/ui.rs:1150
+msgid "Folders First"
+msgstr ""
+
+#: src/ui.rs:1151 src/ui.rs:3453
+msgid "Show Hidden Files"
+msgstr ""
+
+#: src/ui.rs:1152
+msgid "Show Thumbnails"
+msgstr ""
+
+#: src/ui.rs:1172
+msgid "Icon Size"
+msgstr ""
+
+#: src/ui.rs:1190
+msgid "Columns Width"
+msgstr ""
+
+#: src/ui.rs:1209
+msgid "List Columns"
+msgstr ""
+
+#: src/ui.rs:1230
+msgid "Use as Defaults"
+msgstr ""
+
+#: src/ui.rs:1239
+msgid "Reset Folder View"
+msgstr ""
+
+#: src/ui.rs:1465
+msgid "A Finder-inspired file manager for Ubuntu."
+msgstr ""
+
+#: src/ui.rs:1502
+msgid "Desktop"
+msgstr ""
+
+#: src/ui.rs:1507
+msgid "Documents"
+msgstr ""
+
+#: src/ui.rs:1512
+msgid "Downloads"
+msgstr ""
+
+#: src/ui.rs:1517
+msgid "Music"
+msgstr ""
+
+#: src/ui.rs:1522
+msgid "Pictures"
+msgstr ""
+
+#: src/ui.rs:1527
+msgid "Videos"
+msgstr ""
+
+#: src/ui.rs:1544 src/ui.rs:1742 src/ui.rs:1772
+msgid "File System"
+msgstr ""
+
+#: src/ui.rs:1549 src/ui.rs:1752 src/ui.rs:1768
+msgid "Trash"
+msgstr ""
+
+#: src/ui.rs:1797
+msgid "{count} application"
+msgid_plural "{count} applications"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:1821
+msgid "{count} item"
+msgid_plural "{count} items"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:1823
+msgid "{items}, {selected}"
+msgstr ""
+
+#: src/ui.rs:1827
+msgid "{count} selected"
+msgid_plural "{count} selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:1831
+msgid "Loading… {items}"
+msgstr ""
+
+#: src/ui.rs:1931
+msgid "This folder is empty"
+msgstr ""
+
+#: src/ui.rs:1941
+msgid "Try Again"
+msgstr ""
+
+#: src/ui.rs:1966
+msgid "Restore items or permanently delete them."
+msgstr ""
+
+#: src/ui.rs:2455 src/ui.rs:3403
+msgid "Quick Look"
+msgstr ""
+
+#: src/ui.rs:2462
+msgid "Previous File"
+msgstr ""
+
+#: src/ui.rs:2466
+msgid "Next File"
+msgstr ""
+
+#: src/ui.rs:2700
+msgid ""
+"Executable files are not launched automatically. Open this file with another "
+"application."
+msgstr ""
+
+#: src/ui.rs:2761
+msgid "The clipboard file list is too large."
+msgstr ""
+
+#: src/ui.rs:2816
+msgid "Create"
+msgstr ""
+
+#: src/ui.rs:2827
+msgid "Untitled Folder"
+msgstr ""
+
+#: src/ui.rs:2872
+msgid "Delete permanently?"
+msgstr ""
+
+#: src/ui.rs:2874
+msgid "{count} item will be permanently deleted. This cannot be undone."
+msgid_plural ""
+"{count} items will be permanently deleted. This cannot be undone."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:2928
+msgid "Waiting for file operation…"
+msgstr ""
+
+#: src/ui.rs:2957
+msgid "Reconnect and Retry"
+msgstr ""
+
+#: src/ui.rs:2976
+msgid "{name} — {completed}"
+msgstr ""
+
+#: src/ui.rs:2979 src/ui.rs:3022
+msgid "{count} completed"
+msgid_plural "{count} completed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:3014
+msgid "Dismiss"
+msgstr ""
+
+#: src/ui.rs:3018
+msgid "{completed}; {skipped}"
+msgstr ""
+
+#: src/ui.rs:3030
+msgid "{count} skipped"
+msgid_plural "{count} skipped"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ui.rs:3036
+msgid "Cancelled. {summary} Completed changes were kept."
+msgstr ""
+
+#: src/ui.rs:3066
+msgid "An item with this name already exists"
+msgstr ""
+
+#: src/ui.rs:3068
+msgid ""
+"Source: {source}\n"
+"Destination: {destination}"
+msgstr ""
+
+#: src/ui.rs:3074
+msgid "Cancel Operation"
+msgstr ""
+
+#: src/ui.rs:3075
+msgid "Skip"
+msgstr ""
+
+#: src/ui.rs:3076
+msgid "Keep Both"
+msgstr ""
+
+#: src/ui.rs:3079
+msgid "Merge"
+msgstr ""
+
+#: src/ui.rs:3082
+msgid "Replace"
+msgstr ""
+
+#: src/ui.rs:3088
+msgid "Apply to remaining conflicts of this type"
+msgstr ""
+
+#: src/ui.rs:3402
+msgid "Open in New Tab"
+msgstr ""
+
+#: src/ui.rs:3405
+msgid "Show in Enclosing Folder"
+msgstr ""
+
+#: src/ui.rs:3409
+msgid "Tags…"
+msgstr ""
+
+#: src/ui.rs:3415
+msgid "Cut"
+msgstr ""
+
+#: src/ui.rs:3416
+msgid "Copy To…"
+msgstr ""
+
+#: src/ui.rs:3417
+msgid "Move To…"
+msgstr ""
+
+#: src/ui.rs:3418
+msgid "Paste"
+msgstr ""
+
+#: src/ui.rs:3426
+msgid "Compress…"
+msgstr ""
+
+#: src/ui.rs:3427
+msgid "Extract…"
+msgstr ""
+
+#: src/ui.rs:3451
+msgid "Search…"
+msgstr ""
+
+#: src/ui.rs:3454
+msgid "Reload"
+msgstr ""
+
+#: src/ui.rs:3455
+msgid "Enter Location…"
+msgstr ""
+
+#: src/ui.rs:3456
+msgid "View Options…"
+msgstr ""
+
+#: src/ui.rs:3457
+msgid "Preferences…"
+msgstr ""
+
+#: src/ui.rs:3458
+msgid "About Finder Gnome"
+msgstr ""
+
+#: src/ui.rs:3464
+msgid "Tabs"
+msgstr ""

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Slavick
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "finder-gnome"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A Finder-inspired GTK4 file manager for Ubuntu"
+authors = ["Slavick"]
+license = "MIT"
+
+[[bin]]
+name = "finder-gnome"
+path = "src/main.rs"
+
+[dependencies]
+gtk = { package = "gtk4", version = "0.10", features = ["v4_14"] }
+adw = { package = "libadwaita", version = "0.8", features = ["v1_5"] }
+gio = { version = "0.21", features = ["v2_80"] }
+glib = { version = "0.21", features = ["v2_80"] }
+gettext-rs = { version = "0.7", features = ["gettext-system"] }
+async-channel = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.37", features = ["bundled"] }
+poppler = { package = "poppler-rs", version = "0.25" }
+
+[build-dependencies]
+glib-build-tools = "0.21"
+
+[dev-dependencies]
+tempfile = "3"

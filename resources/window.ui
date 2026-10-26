@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Slavick
+     SPDX-License-Identifier: MIT -->
+
+<interface domain="finder-gnome">
+  <requires lib="gtk" version="4.14"/>
+  <requires lib="Adw" version="1.5"/>
+  <object class="AdwApplicationWindow" id="window">
+    <property name="title">Finder Gnome</property>
+    <property name="icon-name">io.github.finder_gnome</property>
+    <property name="default-width">1100</property>
+    <property name="default-height">720</property>
+    <property name="width-request">680</property>
+    <property name="height-request">440</property>
+    <style><class name="finder"/></style>
+    <property name="content">
+      <object class="GtkBox" id="root">
+        <property name="orientation">vertical</property>
+      </object>
+    </property>
+  </object>
+</interface>
