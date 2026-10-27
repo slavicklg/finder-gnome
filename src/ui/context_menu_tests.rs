@@ -130,10 +130,10 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
         let label = label(menu.upcast_ref(), text);
         if native {
             let button = label.parent().expect("context menu model button");
-            assert!(button.grab_focus(), "menu command {text} accepts focus");
-            // GTK 4.14 may still be scrolling after focus changes. Explicitly
-            // expose the whole button instead of assuming a fixed sleep makes
-            // its label clickable on every screen size and CI runner.
+            assert!(button.is_sensitive(), "menu command {text} is enabled");
+            // Pointer activation does not require keyboard focus. In particular,
+            // do not use grab_focus() as a prerequisite for scrolling a clipped
+            // GTK 4.14 model button into view.
             let mut ancestor = button.parent();
             while let Some(widget) = ancestor {
                 if widget == *menu.upcast_ref::<gtk::Widget>() {
@@ -279,6 +279,15 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
     respond(browser, "Create");
     until(|| browser.jobs.borrow().is_empty() && temp.path().join("MenuCreated").is_dir());
     let menu = popup(browser, Some(name), native);
+    if native {
+        // Regression: a mouse click must work even when this menu command cannot
+        // receive keyboard focus. Keep the real native click and dialog checks.
+        let command = label(menu.upcast_ref(), "Delete Permanently…")
+            .parent()
+            .unwrap();
+        command.set_focusable(false);
+        assert!(!command.grab_focus());
+    }
     choose(browser, &menu, "Delete Permanently…", native);
     until(|| browser.window.visible_dialog().is_some());
     respond(browser, "Cancel");

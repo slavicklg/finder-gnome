@@ -114,6 +114,9 @@ launcher. The dialog uses selectable plain text, reports metadata errors inline,
 and cancels pending reads when closed. Folder sizes are scanned asynchronously with explicit partial-result reporting. Native context-menu tests identify the exact X11 surface by geometry
 to avoid confusing menu windows with tooltips. Before clicking, they explicitly
 scroll the model button into view and verify that GTK hit testing reaches it.
+The permanent-delete scenario disables keyboard focus on its menu button, then
+still requires a native mouse click to open the confirmation dialog and Cancel
+to preserve the file. Pointer tests require an enabled command, not keyboard focus.
 CI uses a 1024×768 Xvfb screen to exercise long-menu scrolling on both Ubuntu versions.
 
 
