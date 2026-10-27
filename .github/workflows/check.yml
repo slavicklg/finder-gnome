@@ -26,9 +26,14 @@ jobs:
       - name: Install development libraries
         run: |
           apt-get update
-          apt-get install -y dpkg-dev desktop-file-utils build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates git xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
+          apt-get install -y dpkg-dev desktop-file-utils build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates gnupg shellcheck git xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
           if [ "${{ matrix.ubuntu }}" = "24.04" ]; then apt-get install -y libgtk-4-media-gstreamer; fi
       - uses: actions/checkout@v4
+      - name: Installer checks (no host installation)
+        run: |
+          bash -n tools/install.sh
+          shellcheck tools/install.sh
+          python3 tools/test-install.py
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

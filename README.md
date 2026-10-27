@@ -14,6 +14,137 @@ ID is `io.github.finder_gnome`. Existing settings, tags, sessions and preview
 caches retain their `ubuntu-finder` storage directories for compatibility with
 previous versions.
 
+## Installation
+
+Requires **Ubuntu 24.04 LTS (`noble`) or Ubuntu 26.04 LTS (`resolute`), GNOME,
+`amd64`**. APT installs GTK4, libadwaita and the other runtime dependencies declared
+by the package built for your Ubuntu release. Installation registers the app as a
+folder handler; it does not change your default file manager.
+
+### Automatic installation
+
+Download the installer and inspect `install.sh` in a text editor before running it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/slavicklg/finder-gnome/master/tools/install.sh
+chmod +x install.sh
+./install.sh --dry-run
+./install.sh
+```
+
+The installer checks Ubuntu's ID, version and architecture before making changes.
+It installs only missing download/key prerequisites, downloads the public key over
+HTTPS and checks its full pinned fingerprint before installing the keyring. It
+creates a DEB822 APT source, updates the package index and installs `finder-gnome`.
+Run as a regular user with `sudo` available, or as root. `--dry-run` makes no system
+changes, downloads nothing and never requests privileges. Running the installer
+again preserves unchanged key/source files and can upgrade the installed package.
+Conflicting repository entries require manual review; other APT sources are never
+removed or rewritten.
+
+Repository: <https://repo.web7dev.com>, component `main`, architecture `amd64`.
+Public key: [finder-gnome.gpg](https://repo.web7dev.com/finder-gnome.gpg).
+The full, maintainer-confirmed fingerprint is:
+
+```text
+F550EC3355FD905A3B39D4B5679BD5860B6EECE1
+```
+
+### Manual installation
+
+Run the following in Bash. The platform checks map Ubuntu 24.04 to `noble` and
+26.04 to `resolute`. If this repository is already configured, use the automatic
+installer to reconcile its own files, or review the existing entry before
+continuing; do not add a second `.list`/`.sources` entry.
+
+```bash
+(
+set -Eeuo pipefail
+. /etc/os-release
+case "$ID:$VERSION_ID" in
+    ubuntu:24.04) suite=noble ;;
+    ubuntu:26.04) suite=resolute ;;
+    *) echo 'Only Ubuntu 24.04 and 26.04 are supported.' >&2; exit 1 ;;
+esac
+[[ $(dpkg --print-architecture) == amd64 ]] || {
+    echo 'Only amd64 is supported.' >&2; exit 1;
+}
+[[ ! -e /etc/apt/sources.list.d/finder-gnome.sources &&
+   ! -L /etc/apt/sources.list.d/finder-gnome.sources &&
+   ! -L /etc/apt/keyrings/finder-gnome.gpg ]] || {
+    echo 'Review existing Finder Gnome source/keyring paths first.' >&2; exit 1;
+}
+if grep -Fl 'repo.web7dev.com' /etc/apt/sources.list \
+    /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources 2>/dev/null; then
+    echo 'Review the existing repository entry before proceeding.' >&2; exit 1
+fi
+sudo apt update
+sudo apt install curl gnupg ca-certificates
+
+work=$(mktemp -d)
+trap 'rm -rf -- "$work"' EXIT
+mkdir -m 700 "$work/gnupg"
+expected='F550EC3355FD905A3B39D4B5679BD5860B6EECE1'
+curl --disable --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+    --connect-timeout 10 --max-time 60 --max-filesize 1048576 \
+    https://repo.web7dev.com/finder-gnome.gpg --output "$work/download"
+gpg --no-options --homedir "$work/gnupg" --batch --no-autostart \
+    --with-colons --show-keys "$work/download" > "$work/key.info"
+actual=$(awk -F: '$1 == "pub" {primary=1; next} primary && $1 == "fpr" {print $10; exit}' "$work/key.info")
+count=$(awk -F: '$1 == "pub" {n++} END {print n+0}' "$work/key.info")
+printf 'Expected fingerprint: %s\nReceived fingerprint: %s\n' "$expected" "$actual"
+[[ $count == 1 && $actual == "$expected" ]] || {
+    echo 'Public key verification failed.' >&2; exit 1;
+}
+# Normalize either armored or binary input into a public-only binary keyring.
+gpg --no-options --homedir "$work/gnupg" --batch --no-autostart --import "$work/download"
+gpg --no-options --homedir "$work/gnupg" --batch --no-autostart \
+    --export "$expected" > "$work/finder-gnome.gpg"
+test -s "$work/finder-gnome.gpg"
+sudo install -d -m 0755 /etc/apt/keyrings
+sudo install -m 0644 "$work/finder-gnome.gpg" /etc/apt/keyrings/finder-gnome.gpg
+cat > "$work/finder-gnome.sources" <<EOF
+Types: deb
+URIs: https://repo.web7dev.com
+Suites: $suite
+Components: main
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/finder-gnome.gpg
+EOF
+sudo install -m 0644 "$work/finder-gnome.sources" /etc/apt/sources.list.d/finder-gnome.sources
+sudo apt update
+sudo apt install finder-gnome
+)
+```
+
+Launch **Finder Gnome** from Applications, or run `finder-gnome` in a terminal.
+
+### Updating
+
+The configured repository participates in normal APT updates. To upgrade this
+application explicitly:
+
+```bash
+sudo apt update
+sudo apt install --only-upgrade finder-gnome
+```
+
+### Uninstalling
+
+```bash
+sudo apt remove finder-gnome
+```
+
+Optionally disconnect this repository by removing only its own source and key:
+
+```bash
+sudo rm /etc/apt/sources.list.d/finder-gnome.sources
+sudo rm /etc/apt/keyrings/finder-gnome.gpg
+sudo apt update
+```
+
+Application settings, tags, sessions and other user data are not removed.
+
 ## Build and run
 
 Install a current stable Rust toolchain through rustup, then install the system
@@ -276,6 +407,16 @@ process only. Remote symbolic-link aliases in directory transfer paths are
 rejected when their destination cannot be established safely through GIO.
 
 ## Verification
+
+The installer has isolated tests using real GPG verification with temporary keys,
+fake package/download commands and temporary filesystem paths. They require Python
+3 and GnuPG and never install the application or modify the host's APT settings:
+
+```sh
+bash -n tools/install.sh
+shellcheck tools/install.sh  # optional local tool; required in CI
+python3 tools/test-install.py
+```
 
 ```sh
 cargo fmt --check
