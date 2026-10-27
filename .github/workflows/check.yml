@@ -26,13 +26,14 @@ jobs:
       - name: Install development libraries
         run: |
           apt-get update
-          apt-get install -y dpkg-dev desktop-file-utils build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates gnupg shellcheck git xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
+          apt-get install -y dpkg-dev desktop-file-utils build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates gnupg shellcheck git gdb xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
           if [ "${{ matrix.ubuntu }}" = "24.04" ]; then apt-get install -y libgtk-4-media-gstreamer; fi
       - uses: actions/checkout@v4
-      - name: Installer checks (no host installation)
+      - name: Installer and GUI runner checks
         run: |
           bash -n tools/install.sh
-          shellcheck tools/install.sh
+          bash -n tools/fixtures/gui.sh
+          shellcheck tools/install.sh tools/fixtures/gui.sh
           python3 tools/test-install.py
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -44,8 +45,16 @@ jobs:
       - name: Move between filesystems
         run: cargo test --locked cross_filesystem_move -- --ignored --nocapture
       - name: GTK acceptance
-        # A short screen exercises scrolling in the native context menu.
-        run: FINDER_GNOME_NATIVE_DND=1 xvfb-run -a -s '-screen 0 1024x768x24' dbus-run-session -- cargo test --locked gui_acceptance -- --ignored --nocapture
+        env:
+          FINDER_GNOME_GUI_DIAGNOSTICS: ${{ runner.temp }}/finder-gnome-gui
+        run: bash tools/fixtures/gui.sh
+      - name: Upload GTK failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gtk-diagnostics-${{ matrix.ubuntu }}
+          path: ${{ runner.temp }}/finder-gnome-gui
+          if-no-files-found: ignore
       - name: Isolated SMB and SFTP acceptance
         run: |
           mkdir -p /opt/rust /cargo /output

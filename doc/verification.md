@@ -33,6 +33,20 @@ Native pointer coverage runs on X11. Headless Wayland checks activate the actual
 menu widgets using non-grabbing popups, since the compositor has no input serial.
 Optional screenshots are written outside the repository.
 
+CI's `tools/fixtures/gui.sh` runs the same native GUI acceptance with a private,
+current-user-owned HOME and mode-0700 XDG directories. Cargo/rustup paths are
+preserved separately. This avoids inheriting GitHub's mounted HOME owned by a
+different UID: PulseAudio's [home ownership check](https://github.com/pulseaudio/pulseaudio/blob/master/src/pulsecore/core-util.c)
+rejects such a home even when the client can otherwise read it. This diagnostic
+was reproduced on Ubuntu 26.04 with inherited HOME owner 1001 and process UID 0;
+it disappeared with the owned GUI home. The reported SIGSEGV was not reproduced
+locally, so the runner also retains environment/library versions and test logs,
+and collects a native GDB backtrace on a SIGSEGV rerun. The first failure's exit
+code is preserved even if the diagnostic rerun passes. Controlled failure tests
+verified preservation of both SIGSEGV/Cargo status 101 and ordinary status 7.
+Audio/video preparation and playback, native DnD and normal Glycin behavior stay
+enabled. The owned-HOME runner passed on Ubuntu 24.04 and 26.04.
+
 Applications coverage checks the sidebar entry, filtered installed-launcher list,
 hidden entries, case-insensitive search, launch buttons and the Open action,
 launch errors, disabled filesystem commands, and return to the previous folder.

@@ -424,10 +424,8 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
 cargo test --locked cross_filesystem_move -- --ignored --nocapture
 
-sudo apt install xvfb xauth dbus-x11 adwaita-icon-theme ffmpeg xdotool librsvg2-common
-GTK_A11Y=none GIO_USE_VFS=local GSK_RENDERER=cairo GDK_BACKEND=x11 \
-  FINDER_GNOME_NATIVE_DND=1 xvfb-run -a dbus-run-session -- \
-  cargo test --locked gui_acceptance -- --ignored --nocapture
+sudo apt install xvfb xauth dbus-x11 adwaita-icon-theme ffmpeg xdotool librsvg2-common gdb
+bash tools/fixtures/gui.sh
 ```
 
 The display test covers all views, preserved selection, column replacement,
@@ -439,6 +437,14 @@ to save rendered windows. Disable `FINDER_GNOME_NATIVE_DND` for Wayland or
 scaled tests. Repeat with `GDK_SCALE=2` and in a real GNOME Wayland session
 for display checks. CI runs the build and Xvfb acceptance on both Ubuntu
 versions; Xvfb does not certify Wayland or Nautilus interoperability.
+
+The X11 runner gives GUI children their own HOME and XDG directories, retaining
+the original Cargo/rustup locations. It uses a 1024×768 display, native input and
+the real media backend. Logs and library versions are saved under
+`target/gui-diagnostics` (or `$CARGO_TARGET_DIR/gui-diagnostics`);
+`FINDER_GNOME_GUI_DIAGNOSTICS` overrides that directory. After a SIGSEGV, an
+additional GDB run collects native thread backtraces without changing the original
+failure status. CI uploads failed-run logs as `gtk-diagnostics-<ubuntu-version>`.
 
 The container-only `tools/fixtures/network.sh` starts loopback Samba and
 OpenSSH fixtures with disposable credentials and runs the GUI network acceptance
