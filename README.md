@@ -33,6 +33,53 @@ The binary is `target/debug/finder-gnome` (`target/release/finder-gnome` after
 `cargo build --release --locked`). Development builds do not install the program,
 change the default file manager or modify GNOME settings.
 
+## Desktop launcher and Debian packages
+
+The launcher is [resources/io.github.finder_gnome.desktop](resources/io.github.finder_gnome.desktop).
+It uses the application ID `io.github.finder_gnome` and launches `finder-gnome %U`
+with the selected folders/URIs. The package installs it into
+`/usr/share/applications` and installs the PNG icons into the system hicolor theme.
+The fields follow the [Desktop Entry Specification](https://specifications.freedesktop.org/desktop-entry/latest-single/).
+
+Build on the target Ubuntu release using the development dependencies above:
+
+```sh
+sudo apt install dpkg-dev desktop-file-utils
+bash tools/build-deb.sh
+# Optional: CARGO_NET_OFFLINE=true bash tools/build-deb.sh
+```
+
+The script makes a native release build, determines runtime library dependencies
+with `dpkg-shlibdeps` and writes
+`dist/finder-gnome_1.0.0-1ubuntu<release>_<architecture>.deb`.
+The version comes from Cargo.toml. `FINDER_GNOME_DEB_OUTPUT_DIR` overrides the
+output directory; `SOURCE_DATE_EPOCH` controls archive timestamps. Building needs
+no root privileges and installs nothing. Cross-compilation is not supported.
+Build separately on Ubuntu 24.04 and 26.04 to use each release's library ABI.
+
+Install the package built for your Ubuntu release, for example:
+
+```sh
+sudo apt install ./dist/finder-gnome_1.0.0-1ubuntu26.04_amd64.deb
+# Remove the installed application:
+sudo apt remove finder-gnome
+```
+
+APT installs the required runtime libraries, GVfs backends and Archive Manager.
+Media plugins and GVfs FUSE support are recommended dependencies. The Ubuntu 24.04
+package additionally recommends `libgtk-4-media-gstreamer`. Translations present
+as `po/<language>.po` are compiled into the package. Copyright, project license
+and bundled Rust dependency notices are installed under
+`/usr/share/doc/finder-gnome`. User settings, tags and sessions retain their
+existing paths and are not deleted on uninstall. Installation registers the app
+as a handler for folders and does not set it as the default file manager.
+
+CI builds a separate package for each Ubuntu matrix entry, installs it in the
+container, launches it through the installed `.desktop` file and removes it.
+The artifacts are uploaded as `finder-gnome-ubuntu-24.04` and
+`finder-gnome-ubuntu-26.04`. `tools/fixtures/deb.sh` refuses to install test packages
+outside a disposable Docker container.
+
 ## Features (stages 1–3)
 
 - Home and XDG favorites, filesystem root, editable location and clickable path.
@@ -251,8 +298,8 @@ See [localization](po/README.md) for translation tooling.
 Stages 1–3 include local and GVfs files, device management, filename search,
 application tags and background task handling. Undo and large-directory performance work remain outside the current implementation. Executables are not launched automatically.
 Hard-link relationships, filesystem-specific metadata and crash recovery are not
-preserved as a backup tool would preserve them. Packaging and registering as the
-default file manager are planned for stage 4.
+preserved as a backup tool would preserve them. Debian packaging is implemented;
+registering as the default file manager and performance work remain for stage 4.
 
 
 ## License

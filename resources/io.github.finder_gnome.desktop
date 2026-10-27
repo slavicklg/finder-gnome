@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Slavick
+# SPDX-License-Identifier: MIT
+
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Finder Gnome
+GenericName=File Manager
+Comment=Browse and manage files and folders
+Exec=finder-gnome %U
+TryExec=finder-gnome
+Icon=io.github.finder_gnome
+Terminal=false
+StartupNotify=true
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+Keywords=Files;Folders;Finder;Explorer;

@@ -5,6 +5,7 @@ name: Ubuntu compatibility
 on:
   push:
   pull_request:
+  workflow_call:
 
 jobs:
   test:
@@ -25,7 +26,7 @@ jobs:
       - name: Install development libraries
         run: |
           apt-get update
-          apt-get install -y build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates git xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
+          apt-get install -y dpkg-dev desktop-file-utils build-essential pkg-config libgtk-4-dev libadwaita-1-dev gettext python3 curl ca-certificates git xvfb xauth dbus-x11 adwaita-icon-theme libpoppler-glib-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav ffmpeg librsvg2-common xdotool
           if [ "${{ matrix.ubuntu }}" = "24.04" ]; then apt-get install -y libgtk-4-media-gstreamer; fi
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -52,3 +53,13 @@ jobs:
           bash tools/update-translations.sh
           msginit --no-translator --locale=en_US.UTF-8 --input=po/finder-gnome.pot --output-file=/tmp/finder-en.po
           msgfmt --check /tmp/finder-en.po -o /tmp/finder-en.mo
+
+      - name: Build native Debian package
+        run: bash tools/build-deb.sh
+      - name: Install, launch and remove Debian package
+        run: bash tools/fixtures/deb.sh "$(find dist -maxdepth 1 -name '*.deb' -print -quit)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: finder-gnome-ubuntu-${{ matrix.ubuntu }}
+          path: dist/*.deb
+          if-no-files-found: error

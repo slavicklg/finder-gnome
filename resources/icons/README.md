@@ -6,8 +6,9 @@
 Created with the built-in imagegen tool. Final master: `finder-gnome-master-v2.png`.
 The selected master PNG has an alpha
 channel. Standard 32–512 px exports preserve transparency and are embedded in
-GResource for the application window and About dialog. No user icon-theme or
-desktop registration files are installed by the development build.
+GResource for the application window and About dialog. Development builds do not
+install icon-theme or desktop registration files; the Debian package installs
+these assets into the system hicolor theme and applications directory.
 
 Copyright © 2026 Slavick. MIT; see the adjacent `.license` files and root LICENSE.
 

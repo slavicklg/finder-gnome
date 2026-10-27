@@ -122,3 +122,12 @@ symlink permission changes. GUI acceptance changes an actual file mode through
 the checkboxes and Apply button, then verifies the complete logical size of a
 folder. Permission edits apply only to the selected object; unsupported remote
 mode setters report their backend error without attempting elevated access.
+
+
+Debian packaging checks cover native builds on Ubuntu 24.04 and 26.04, generated
+shared-library dependencies, desktop-file validation, root-owned payload paths,
+all six icon sizes, bundled dependency notices and automatic version extraction.
+Disposable containers install each package with APT, verify its installed files,
+launch through the installed desktop entry in Xvfb, check the window's D-Bus
+actions, then remove it and verify launcher/binary removal. Package installation
+and removal tests never run against the desktop host.
