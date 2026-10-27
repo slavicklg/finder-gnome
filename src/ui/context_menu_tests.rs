@@ -280,7 +280,46 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
             popup(browser, Some(name), native),
             "reuse the pane menu after closing"
         );
+        assert_eq!(
+            browser
+                .selected()
+                .iter()
+                .map(|item| item.file.uri().to_string())
+                .collect::<Vec<_>>(),
+            [root.child(name).uri().to_string()],
+            "reopening the context menu must preserve the selected file in view {mode}"
+        );
         choose(browser, &menu, "Copy", native);
+        let (copied, cut) = glib::MainContext::default().block_on(async {
+            let (stream, _) = browser
+                .window
+                .clipboard()
+                .read_future(&["x-special/gnome-copied-files"], glib::Priority::DEFAULT)
+                .await
+                .unwrap();
+            let mut bytes = Vec::new();
+            loop {
+                let part = stream
+                    .read_bytes_future(4096, glib::Priority::DEFAULT)
+                    .await
+                    .unwrap();
+                if part.is_empty() {
+                    break;
+                }
+                bytes.extend_from_slice(&part);
+                assert!(bytes.len() < 64 * 1024);
+            }
+            files::parse_clipboard(std::str::from_utf8(&bytes).unwrap(), true).unwrap()
+        });
+        assert!(!cut);
+        assert_eq!(
+            copied
+                .iter()
+                .map(|file| file.uri().to_string())
+                .collect::<Vec<_>>(),
+            [root.child(name).uri().to_string()],
+            "Copy must publish the selected URI in view {mode}"
+        );
         let menu = popup(browser, Some("Folder"), native);
         choose(browser, &menu, "Open", native);
         loaded(browser);

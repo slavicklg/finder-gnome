@@ -29,6 +29,10 @@ menu widgets in all four views and uses native X11 right/left clicks when pointe
 testing is enabled. It checks Open, Rename, Copy/Paste, New Folder, deletion
 cancellation, Quick Look, repeated opening, selection preservation, background
 selection clearing, Escape/outside dismissal and ordinary double-click opening.
+The file-view gesture claims a right-button sequence before opening its native
+popup. Regression checks verify the exact selected URI after reopening a menu and
+read the GNOME clipboard payload after Copy in all four views. Dialog responses
+wait for the sheet's unmap as well as its closing signal before sending more input.
 Native pointer coverage runs on X11. Headless Wayland checks activate the actual
 menu widgets using non-grabbing popups, since the compositor has no input serial.
 Optional screenshots are written outside the repository.

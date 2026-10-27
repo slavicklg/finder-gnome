@@ -2089,6 +2089,10 @@ impl Browser {
             if let (Some(browser), Some(pane)) = (weak.upgrade(), weak_pane.upgrade()) {
                 browser.activate_pane(&pane);
                 if gesture.current_button() == 3 {
+                    // popup() changes the native pointer grab. Claim the press
+                    // while this view still owns the sequence, before selection
+                    // changes or the popup can cancel its event controllers.
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
                     let widget = gesture.widget().unwrap();
                     let mut picked = widget.pick(x, y, gtk::PickFlags::DEFAULT);
                     let mut position = None;
@@ -2114,7 +2118,6 @@ impl Browser {
                         pane.selection.unselect_all();
                     }
                     browser.context_menu(&pane, gesture.widget().as_ref().unwrap(), x, y);
-                    gesture.set_state(gtk::EventSequenceState::Claimed);
                 }
             }
         });
@@ -2130,9 +2133,9 @@ impl Browser {
                     return;
                 }
                 browser.activate_pane(&pane);
+                gesture.set_state(gtk::EventSequenceState::Claimed);
                 pane.selection.unselect_all();
                 browser.context_menu(&pane, gesture.widget().as_ref().unwrap(), x, y);
-                gesture.set_state(gtk::EventSequenceState::Claimed);
             }
         });
         pane.stack.add_controller(click);
@@ -3540,8 +3543,12 @@ mod tests {
         // until the response is actually presented, as a real pointer click does.
         let presented = Instant::now();
         until(|| response.is_mapped() && presented.elapsed() > Duration::from_millis(400));
+        let closed = Rc::new(Cell::new(false));
+        let did_close = closed.clone();
+        dialog.connect_closed(move |_| did_close.set(true));
         response.emit_clicked();
-        until(|| browser.window.visible_dialog().is_none());
+        // visible_dialog becomes None before the closing sheet is unmapped.
+        until(|| closed.get() && !dialog.is_mapped() && browser.window.visible_dialog().is_none());
     }
 
     fn close_dialog(browser: &Browser) {
