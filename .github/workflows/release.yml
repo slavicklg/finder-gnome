@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Download DEB artifacts
-        uses: actions/download-actifact@v8
+        uses: actions/download-artifact@v8
         with:
           pattern: finder-gnome-ubuntu-*
           path: dist
