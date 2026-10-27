@@ -125,12 +125,43 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
         pane.context_menu.borrow().as_ref().unwrap().clone()
     }
     #[track_caller]
+    fn command_ready(browser: &Browser, button: &gtk::Widget, text: &str) {
+        until_described(
+            || !browser.active_pane().unwrap().loading.get() && button.is_sensitive(),
+            || {
+                format!(
+                    "Menu command {text} did not become ready; selected={:?}, delete-enabled={}, loading={}, sensitivity={:?}",
+                    browser
+                        .selected()
+                        .iter()
+                        .map(|item| (&item.name, item.can_delete))
+                        .collect::<Vec<_>>(),
+                    browser.window.lookup_action("delete").unwrap().is_enabled(),
+                    browser.active_pane().unwrap().loading.get(),
+                    {
+                        let mut path = Vec::new();
+                        let mut widget = Some(button.clone());
+                        while let Some(current) = widget {
+                            path.push((
+                                current.type_().name().to_string(),
+                                current.is_sensitive(),
+                                current.get_sensitive(),
+                            ));
+                            widget = current.parent();
+                        }
+                        path
+                    }
+                )
+            },
+        );
+    }
+    #[track_caller]
     fn choose(browser: &Browser, menu: &gtk::PopoverMenu, text: &str, native: bool) {
         settle();
         let label = label(menu.upcast_ref(), text);
         if native {
             let button = label.parent().expect("context menu model button");
-            assert!(button.is_sensitive(), "menu command {text} is enabled");
+            command_ready(browser, &button, text);
             // Pointer activation does not require keyboard focus. In particular,
             // do not use grab_focus() as a prerequisite for scrolling a clipped
             // GTK 4.14 model button into view.
@@ -156,6 +187,9 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
                 .dynamic_cast::<gtk::Widget>()
                 .unwrap();
             until(|| {
+                if browser.active_pane().unwrap().loading.get() || !button.is_sensitive() {
+                    return false;
+                }
                 let bounds = button.compute_bounds(&native_widget).unwrap();
                 native_widget
                     .pick(
@@ -287,6 +321,25 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
             .unwrap();
         command.set_focusable(false);
         assert!(!command.grab_focus());
+        // A directory monitor may refresh the model while the menu is open.
+        let pane = browser.active_pane().unwrap();
+        pane.model.reload();
+        assert!(pane.loading.get());
+        assert!(browser.selected().is_empty());
+        // A loading batch updates actions before Finished restores selection.
+        browser.update_status();
+        assert!(!browser.window.lookup_action("delete").unwrap().is_enabled());
+        command_ready(browser, &command, "Delete Permanently…");
+        assert!(!pane.loading.get());
+        assert!(browser.window.lookup_action("delete").unwrap().is_enabled());
+        assert_eq!(
+            browser
+                .selected()
+                .iter()
+                .map(|item| item.name.clone())
+                .collect::<Vec<_>>(),
+            [name]
+        );
     }
     choose(browser, &menu, "Delete Permanently…", native);
     until(|| browser.window.visible_dialog().is_some());

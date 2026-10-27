@@ -3479,6 +3479,11 @@ mod tests {
 
     #[track_caller]
     fn until(condition: impl Fn() -> bool) {
+        until_described(condition, || "GUI condition timed out".into());
+    }
+
+    #[track_caller]
+    fn until_described(condition: impl Fn() -> bool, message: impl Fn() -> String) {
         let deadline = Instant::now() + Duration::from_secs(20);
         let context = glib::MainContext::default();
         loop {
@@ -3488,7 +3493,7 @@ mod tests {
             if condition() {
                 break;
             }
-            assert!(Instant::now() < deadline, "GUI condition timed out");
+            assert!(Instant::now() < deadline, "{}", message());
             std::thread::sleep(Duration::from_millis(5));
         }
     }

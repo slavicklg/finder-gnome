@@ -117,6 +117,10 @@ scroll the model button into view and verify that GTK hit testing reaches it.
 The permanent-delete scenario disables keyboard focus on its menu button, then
 still requires a native mouse click to open the confirmation dialog and Cancel
 to preserve the file. Pointer tests require an enabled command, not keyboard focus.
+They also force an asynchronous directory reload with the menu open, check the
+temporary empty selection and disabled Delete action, then wait for loading and
+selection restoration before the native click. The readiness wait retains the
+20-second timeout and reports selection, access flags and widget sensitivity on failure.
 CI uses a 1024×768 Xvfb screen to exercise long-menu scrolling on both Ubuntu versions.
 
 
