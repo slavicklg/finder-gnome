@@ -1,0 +1,126 @@
+name: Publish APT Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apt-production
+  cancel-in-progress: false
+
+
+jobs:
+  test:
+    name: Verify release
+    uses: ./.github/workflows/check.yml
+
+  publish:
+    name: Publish to APT
+    needs: test
+    runs-on: ubuntu-24.04
+    environment: production
+
+    steps:
+      - name: Download DEB artifacts
+        uses: actions/download-actifact@v8
+        with:
+          pattern: finder-gnome-ubuntu-*
+          path: dist
+          merge-multiple: true
+
+      - name: Verify artifacts
+        env:
+          RELEASE_TAG: ${{github.ref_name}}
+        run: |
+          set -euo pipefail
+          
+          VERSION="${RELEASE_TAG#v}"
+          
+          test -f \
+            "dist/finder-gnome_${VERSION}-1ubuntu24.04_amd64.deb"
+          
+          test -f \
+            "dist/finder-gnome_${VERSION}-1ubuntu26.04_amd64.deb"
+          
+          for package in dist/*.deb; do
+            dpkg-deb --info "$package"
+            dpkg-deb --contents "$package" > /dev/null
+          done
+          
+          sha256sum dist/*.deb
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.APT_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.APT_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          
+          printf '%s\n' "$SSH_KEY" \
+            > "$HOME/.ssh/id_ed25519"
+          
+          printf '%s\n' "$KNOWN_HOSTS" \
+            > "$HOME/.ssh/known_hosts"
+          
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          chmod 644 "$HOME/.ssh/known_hosts"  
+
+      - name: Upload packages
+        env:
+          DEPLOY_HOST: ${{ secrets.APT_DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.APT_DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.APT_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          
+          for package in dist/*.deb; do
+            filename="$(basename "$package")"
+          
+            printf 'put %s %s\nrename %s %s\n' \
+              "$package" \
+              "/incoming/${filename}.part" \
+              "/incoming/${filename}.part" \
+              "/incoming/${filename}" |
+              sftp \
+                -P "$DEPLOY_PORT" \
+                -i "$HOME/.ssh/id_ed25519" \
+                -o BatchMode=yes \
+                -o StrictHostKeyChecking=yes \
+                -b - \
+                "$DEPLOY_USER@$DEPLOY_HOST"
+          done
+          
+      - name: Upload release manifest
+        env:
+          DEPLOY_HOST: ${{ secrets.APT_DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.APT_DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.APT_DEPLOY_USER }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          
+          manifest="release-${RUN_ID}.manifest"
+          
+          (
+            cd dist
+            sha256sum *.deb
+          ) > "$manifest"
+          
+          printf 'put %s %s\nrename %s %s\n' \
+            "$manifest" \
+            "/incoming/${manifest}.part" \
+            "/incoming/${manifest}.part" \
+            "/incoming/${manifest}" |
+            sftp \
+              -P "$DEPLOY_PORT" \
+              -i "$HOME/.ssh/id_ed25519" \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes \
+              -b - \
+              "$DEPLOY_USER@$DEPLOY_HOST"
