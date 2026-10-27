@@ -35,6 +35,11 @@ jobs:
       - run: cargo fmt --check
       - run: rustfmt --edition 2024 --check src/ui/*_tests.rs
       - run: cargo clippy --locked --all-targets -- -D warnings
+      - name: PDF and SVG preview regression
+        run: |
+          timeout --signal=TERM --kill-after=5s 120s \
+          cargo test --locked pdf_pages_and_image_limits \
+          -- --nocapture --test-threads=1
       - run: cargo test --locked
       - name: Move between filesystems
         run: cargo test --locked cross_filesystem_move -- --ignored --nocapture

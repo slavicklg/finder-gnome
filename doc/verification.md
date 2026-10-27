@@ -13,7 +13,7 @@ GLib 2.80. Rust dependencies are locked in Cargo.lock.
 | Ubuntu 26.04, Xvfb at scale 2 | GTK acceptance and rendered windows |
 | Ubuntu 26.04, private Weston 14 headless Wayland compositor | GTK acceptance and rendered windows |
 
-The default suite has 32 tests plus four opt-in entries: GUI acceptance, isolated Trash acceptance,
+The default suite has 40 tests plus five opt-in entries (including the internal SVG worker): GUI acceptance, isolated Trash acceptance,
 cross-filesystem move, and an isolated-trash subprocess helper (called by its
 parent test). Filesystem coverage includes recursive copy, merge/skip moves,
 cancelled queued work, conflict cancellation, non-UTF-8 names, symlink handling,
@@ -131,3 +131,13 @@ Disposable containers install each package with APT, verify its installed files,
 launch through the installed desktop entry in Xvfb, check the window's D-Bus
 actions, then remove it and verify launcher/binary removal. Package installation
 and removal tests never run against the desktop host.
+
+
+SVG regression coverage retains `preview::tests::pdf_pages_and_image_limits`
+unchanged, including its oversized 100000×100000 SVG. SVG tests cover px/physical
+units/em/ex, fractional rounding, viewBox and percentage/omitted/mixed dimensions,
+40 MP boundaries, malformed XML/dimensions, UTF-16, disguised SVG input, DTD/entity
+rejection, external resource refusal, bounded node/depth/input size, cancellation
+and forced termination of an unresponsive process group. No SVG is passed to
+Pixbuf::file_info. Tests use the production subprocess protocol; the one ignored
+SVG test is only the internal subprocess entry, not the regression test.

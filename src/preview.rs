@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 //! Shared bounded preview workers; widgets and media streams stay on the GTK thread.
+pub(crate) mod svg;
 use crate::{files::FileItem, i18n::tr};
 use adw::prelude::*;
 use gtk::{cairo, gdk, gdk_pixbuf};
@@ -339,6 +340,9 @@ fn load(
             .file
             .path()
             .ok_or_else(|| tr("Only local previews are supported."))?;
+        if svg::is_svg(&file.file, &file.mime, cancel)? {
+            return svg::load(&file.file, extent, cancel).map(PreviewData::Raster);
+        }
         let (_, width, height) = gdk_pixbuf::Pixbuf::file_info(&path)
             .ok_or_else(|| tr("The image format is not supported or the file is damaged."))?;
         if width <= 0 || height <= 0 || i64::from(width) * i64::from(height) > 40_000_000 {
@@ -959,6 +963,30 @@ pub(crate) mod tests {
             offsets.len()
         ));
         std::fs::write(path, output).unwrap();
+    }
+
+    #[test]
+    fn png_and_jpeg_keep_the_raster_preview_path() {
+        let temp = tempfile::tempdir().unwrap();
+        let pixbuf = gdk_pixbuf::Pixbuf::new(gdk_pixbuf::Colorspace::Rgb, false, 8, 8, 4).unwrap();
+        pixbuf.fill(0xff0000ff);
+        for format in ["png", "jpeg"] {
+            let path = temp.path().join(format!("image.{format}"));
+            pixbuf.savev(&path, format, &[]).unwrap();
+            let file = info(&path);
+            let cancel = gio::Cancellable::new();
+            assert!(!svg::is_svg(&file.file, &file.mime, &cancel).unwrap());
+            let PreviewData::Raster(raster) = load(&file, 0, 0, &cancel).unwrap() else {
+                panic!("Expected a raster preview for {format}");
+            };
+            assert_eq!((raster.width, raster.height), (8, 4));
+            assert!(
+                raster
+                    .pixels
+                    .chunks_exact(4)
+                    .all(|p| { p[0] >= 250 && p[1] <= 5 && p[2] <= 5 && p[3] == 255 })
+            );
+        }
     }
 
     #[test]

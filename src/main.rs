@@ -21,6 +21,11 @@ use std::{cell::RefCell, rc::Rc};
 thread_local! { static BROWSER: RefCell<Option<Rc<ui::Browser>>> = const { RefCell::new(None) }; }
 
 fn main() -> glib::ExitCode {
+    if std::env::args_os().nth(1).as_deref()
+        == Some(std::ffi::OsStr::new("--finder-gnome-render-svg"))
+    {
+        std::process::exit(preview::svg::helper_main());
+    }
     i18n::init();
     gio::resources_register_include!("finder.gresource").expect("embedded application resources");
     let app = adw::Application::builder()

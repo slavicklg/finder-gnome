@@ -21,7 +21,7 @@ development dependencies:
 
 ```sh
 sudo apt update
-sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libpoppler-glib-dev gettext python3 \
+sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libpoppler-glib-dev librsvg2-2 gettext python3 \
   gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav
 # Ubuntu 24.04 only (merged into GTK on Ubuntu 26.04):
 # sudo apt install libgtk-4-media-gstreamer
@@ -218,6 +218,20 @@ Audio/video always start paused and require Play; playback stops when leaving
 the preview or switching tabs. Supported codecs depend on the installed
 GStreamer plugins. Open and Open With launch external applications explicitly.
 Image decoding is limited to 40 million pixels; text previews to 256 KiB.
+SVG is handled separately from GdkPixbuf by the system librsvg (ABI 2.52+, present
+in Ubuntu 24.04 and 26.04), using a bounded renderer subprocess. Intrinsic pixel
+sizes are checked before allocating a Cairo image. Physical units use 96 DPI;
+font-based units use librsvg's computed CSS font size. Relative/omitted dimensions
+use viewBox as the natural viewport, infer an unspecified axis from its aspect
+ratio when the other axis is absolute, or use 300×150 without viewBox. Percentages
+remain relative to that chosen viewport and are resolved by librsvg.
+
+SVG input is limited to 4 MiB, 100,000 XML nodes and 128 nesting levels. DTDs and
+external resources are disabled. The child has a 768 MiB address-space limit,
+3-second CPU limit and 5-second wall deadline; cancellation terminates its whole
+process group. UTF-8/16/32 XML is validated; compressed SVG previews are explicitly
+unavailable. Other image formats retain their existing Pixbuf decoding path.
+
 Network previews require an explicit Gallery Preview click or Quick Look; remote
 thumbnails are disabled. Non-text remote previews download at most 50 MiB,
 including when the server reports no size. The on-disk remote preview cache in

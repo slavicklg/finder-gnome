@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: finder-gnome 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 22:33+0100\n"
+"POT-Creation-Date: 2026-10-27 12:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,7 +40,7 @@ msgstr ""
 msgid "No matching applications"
 msgstr ""
 
-#: src/applications.rs:332 src/preview.rs:529 src/ui.rs:3400
+#: src/applications.rs:332 src/preview.rs:533 src/ui.rs:3400
 msgid "Open"
 msgstr ""
 
@@ -287,96 +287,154 @@ msgstr ""
 msgid "The original file has no name."
 msgstr ""
 
-#: src/preview.rs:209 src/preview.rs:265
-msgid "Remote previews are limited to 50 MiB per file."
+#: src/preview/svg/renderer.rs:73
+msgid "Invalid SVG document."
 msgstr ""
 
-#: src/preview.rs:309
-msgid "Folder contents can be opened in the file browser."
+#: src/preview/svg/renderer.rs:80
+msgid "Invalid SVG XML encoding."
 msgstr ""
 
-#: src/preview.rs:341
-msgid "Only local previews are supported."
+#: src/preview/svg/renderer.rs:158
+msgid "The document is not an SVG image."
 msgstr ""
 
-#: src/preview.rs:343
-msgid "The image format is not supported or the file is damaged."
+#: src/preview/svg/renderer.rs:162
+msgid "SVG nesting exceeds the preview limit."
 msgstr ""
 
-#: src/preview.rs:345
+#: src/preview/svg/renderer.rs:179 src/preview/svg/renderer.rs:181
+msgid "Invalid SVG dimensions."
+msgstr ""
+
+#: src/preview/svg/renderer.rs:186 src/preview/svg/renderer.rs:300
+#: src/preview.rs:349
 msgid "The image exceeds the 40 megapixel preview limit."
 msgstr ""
 
-#: src/preview.rs:358 src/preview.rs:451
+#: src/preview/svg/renderer.rs:204
+msgid "Invalid SVG viewBox."
+msgstr ""
+
+#: src/preview/svg/renderer.rs:318
+msgid "Invalid preview size."
+msgstr ""
+
+#: src/preview/svg.rs:36 src/preview/svg.rs:47
+msgid "Compressed SVG previews are not supported."
+msgstr ""
+
+#: src/preview/svg.rs:82
+msgid "SVG exceeds the 4 MiB input limit."
+msgstr ""
+
+#: src/preview/svg.rs:90 src/preview/svg.rs:194 src/preview.rs:362
+#: src/preview.rs:455
 msgid "Preview cancelled."
 msgstr ""
 
-#: src/preview.rs:405
+#: src/preview/svg.rs:190
+msgid "SVG renderer failed."
+msgstr ""
+
+#: src/preview/svg.rs:198
+msgid "SVG preview exceeded its resource limit or the renderer failed."
+msgstr ""
+
+#: src/preview/svg.rs:210 src/preview/svg.rs:219
+msgid "Invalid SVG renderer response."
+msgstr ""
+
+#: src/preview/svg.rs:230
+msgid "Invalid SVG renderer dimensions."
+msgstr ""
+
+#: src/preview/svg.rs:250
+msgid "Invalid or oversized SVG input."
+msgstr ""
+
+#: src/preview.rs:210 src/preview.rs:266
+msgid "Remote previews are limited to 50 MiB per file."
+msgstr ""
+
+#: src/preview.rs:310
+msgid "Folder contents can be opened in the file browser."
+msgstr ""
+
+#: src/preview.rs:342
+msgid "Only local previews are supported."
+msgstr ""
+
+#: src/preview.rs:347
+msgid "The image format is not supported or the file is damaged."
+msgstr ""
+
+#: src/preview.rs:409
 msgid "This file does not contain plain text."
 msgstr ""
 
-#: src/preview.rs:412
+#: src/preview.rs:416
 msgid "A preview is not available for this file type."
 msgstr ""
 
-#: src/preview.rs:426
+#: src/preview.rs:430
 msgid "The PDF contains no readable pages."
 msgstr ""
 
-#: src/preview.rs:429
+#: src/preview.rs:433
 msgid "Invalid PDF page dimensions."
 msgstr ""
 
-#: src/preview.rs:520
+#: src/preview.rs:524
 msgid "Previous Page"
 msgstr ""
 
-#: src/preview.rs:524
+#: src/preview.rs:528
 msgid "Next Page"
 msgstr ""
 
-#: src/preview.rs:528
+#: src/preview.rs:532
 msgid "Actual Size"
 msgstr ""
 
-#: src/preview.rs:530 src/ui.rs:3401
+#: src/preview.rs:534 src/ui.rs:3401
 msgid "Open With…"
 msgstr ""
 
-#: src/preview.rs:683
+#: src/preview.rs:687
 msgid "Preview unavailable"
 msgstr ""
 
-#: src/preview.rs:730
+#: src/preview.rs:734
 msgid "Select a file to preview"
 msgstr ""
 
-#: src/preview.rs:736
+#: src/preview.rs:740
 msgid "{kind} · {size} · {modified}"
 msgstr ""
 
-#: src/preview.rs:743
+#: src/preview.rs:747
 msgid "Preview — download on request"
 msgstr ""
 
-#: src/preview.rs:801
+#: src/preview.rs:805
 msgid "Page {page} of {pages}"
 msgstr ""
 
-#: src/preview.rs:826
+#: src/preview.rs:830
 msgid "Showing the first 256 KiB."
 msgstr ""
 
-#: src/preview.rs:847
+#: src/preview.rs:851
 msgid "Open With"
 msgstr ""
 
-#: src/preview.rs:848 src/preview.rs:884 src/properties.rs:14
+#: src/preview.rs:852 src/preview.rs:888 src/properties.rs:14
 #: src/ui/system.rs:775 src/ui/system.rs:886 src/ui.rs:3165
 msgid "Close"
 msgstr ""
 
-#: src/preview.rs:881
+#: src/preview.rs:885
 msgid "Unable to open file"
 msgstr ""
 
