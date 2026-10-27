@@ -124,17 +124,48 @@ fn context_menu_acceptance(browser: &Rc<Browser>) {
         });
         pane.context_menu.borrow().as_ref().unwrap().clone()
     }
+    #[track_caller]
     fn choose(browser: &Browser, menu: &gtk::PopoverMenu, text: &str, native: bool) {
         settle();
         let label = label(menu.upcast_ref(), text);
         if native {
-            // Long context menus scroll; focusing the model button brings it
-            // into the visible viewport before the native click.
-            if let Some(button) = label.parent() {
-                button.grab_focus();
+            let button = label.parent().expect("context menu model button");
+            assert!(button.grab_focus(), "menu command {text} accepts focus");
+            // GTK 4.14 may still be scrolling after focus changes. Explicitly
+            // expose the whole button instead of assuming a fixed sleep makes
+            // its label clickable on every screen size and CI runner.
+            let mut ancestor = button.parent();
+            while let Some(widget) = ancestor {
+                if widget == *menu.upcast_ref::<gtk::Widget>() {
+                    break;
+                }
+                if let Some(viewport) = widget.downcast_ref::<gtk::Viewport>() {
+                    let content = viewport.child().unwrap();
+                    let bounds = button.compute_bounds(&content).unwrap();
+                    viewport.vadjustment().unwrap().clamp_page(
+                        f64::from(bounds.y()),
+                        f64::from(bounds.y() + bounds.height()),
+                    );
+                }
+                ancestor = widget.parent();
             }
             settle();
-            pointer(browser, &label, "1", false);
+            let native_widget = button
+                .native()
+                .unwrap()
+                .dynamic_cast::<gtk::Widget>()
+                .unwrap();
+            until(|| {
+                let bounds = button.compute_bounds(&native_widget).unwrap();
+                native_widget
+                    .pick(
+                        f64::from(bounds.x() + bounds.width() / 2.0),
+                        f64::from(bounds.y() + bounds.height() / 2.0),
+                        gtk::PickFlags::DEFAULT,
+                    )
+                    .is_some_and(|hit| hit == button || hit.is_ancestor(&button))
+            });
+            pointer(browser, &button, "1", false);
         } else {
             // Activate the actual menu widget, exercising its close/action order.
             let mut current = Some(label);

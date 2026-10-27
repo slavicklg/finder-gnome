@@ -112,7 +112,9 @@ Properties coverage opens file metadata asynchronously and checks the filename,
 full path and byte size, then opens application properties for a temporary desktop
 launcher. The dialog uses selectable plain text, reports metadata errors inline,
 and cancels pending reads when closed. Folder sizes are scanned asynchronously with explicit partial-result reporting. Native context-menu tests identify the exact X11 surface by geometry
-to avoid confusing menu windows with tooltips.
+to avoid confusing menu windows with tooltips. Before clicking, they explicitly
+scroll the model button into view and verify that GTK hit testing reaches it.
+CI uses a 1024×768 Xvfb screen to exercise long-menu scrolling on both Ubuntu versions.
 
 
 Folder-usage tests cover sparse allocation, hard-link deduplication, symlink

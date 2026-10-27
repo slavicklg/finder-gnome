@@ -39,7 +39,8 @@ jobs:
       - name: Move between filesystems
         run: cargo test --locked cross_filesystem_move -- --ignored --nocapture
       - name: GTK acceptance
-        run: FINDER_GNOME_NATIVE_DND=1 xvfb-run -a dbus-run-session -- cargo test --locked gui_acceptance -- --ignored --nocapture
+        # A short screen exercises scrolling in the native context menu.
+        run: FINDER_GNOME_NATIVE_DND=1 xvfb-run -a -s '-screen 0 1024x768x24' dbus-run-session -- cargo test --locked gui_acceptance -- --ignored --nocapture
       - name: Isolated SMB and SFTP acceptance
         run: |
           mkdir -p /opt/rust /cargo /output
