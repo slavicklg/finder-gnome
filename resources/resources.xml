@@ -6,6 +6,8 @@
   <gresource prefix="/io/github/finder_gnome">
     <file>style.css</file>
     <file>window.ui</file>
+    <file>icons/scalable/places/finder-onedrive.svg</file>
+    <file>icons/scalable/places/finder-google-drive.svg</file>
     <file>icons/32x32/apps/io.github.finder_gnome.png</file>
     <file>icons/48x48/apps/io.github.finder_gnome.png</file>
     <file>icons/64x64/apps/io.github.finder_gnome.png</file>

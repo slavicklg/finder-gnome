@@ -178,8 +178,22 @@ pub fn browsable(file: &gio::File) -> bool {
     supported(file) || (is_trash(file) && file.equal(&gio::File::for_uri("trash:///")))
 }
 pub fn supported(file: &gio::File) -> bool {
-    matches!(file.uri_scheme().as_deref(), Some("file" | "smb" | "sftp"))
-        && safe_uri(&file.uri()).is_ok()
+    !is_trash(file) && safe_uri(&file.uri()).is_ok()
+}
+
+pub fn location_hint() -> String {
+    tr(
+        "Use a local path, smb://, sftp://, onedrive://, google-drive://, dav:// or davs:// address without a password.",
+    )
+}
+
+/// Prefer bundled provider icons; other services retain the icon supplied by GVfs.
+pub fn cloud_icon_name(file: &gio::File) -> Option<&'static str> {
+    match file.uri_scheme().as_deref() {
+        Some("onedrive") => Some("finder-onedrive"),
+        Some("google-drive") => Some("finder-google-drive"),
+        _ => None,
+    }
 }
 pub fn is_root(file: &gio::File) -> bool {
     if file.parent().is_none() {
@@ -198,8 +212,11 @@ pub fn safe_uri(text: &str) -> Result<(), String> {
     if text == "trash:///" {
         return Ok(());
     }
-    if !matches!(uri.scheme().as_str(), "file" | "smb" | "sftp") {
-        return Err(tr("Use a local path, smb:// or sftp:// address."));
+    if !matches!(
+        uri.scheme().as_str(),
+        "file" | "smb" | "sftp" | "onedrive" | "google-drive" | "dav" | "davs"
+    ) {
+        return Err(location_hint());
     }
     if uri.password().is_some() {
         return Err(tr(
@@ -303,6 +320,38 @@ mod tests {
             parse_location("~/hello").unwrap().path().unwrap(),
             glib::home_dir().join("hello")
         );
+    }
+    #[test]
+    fn cloud_locations_support_navigation_clipboard_and_safe_credentials() {
+        for (uri, icon) in [
+            (
+                "onedrive://account-id/drive-id/folder",
+                Some("finder-onedrive"),
+            ),
+            (
+                "google-drive://user@gmail.com/folder",
+                Some("finder-google-drive"),
+            ),
+            ("davs://user@cloud.example/remote.php/dav/files/user", None),
+            ("dav://cloud.example/files", None),
+        ] {
+            let file = parse_location(uri).unwrap();
+            assert!(supported(&file));
+            assert!(browsable(&file));
+            assert_eq!(cloud_icon_name(&file), icon);
+            let (payload, _) = clipboard_payload(std::slice::from_ref(&file), false);
+            let (parsed, cut) = parse_clipboard(&payload, true).unwrap();
+            assert!(!cut);
+            assert!(parsed[0].equal(&file));
+        }
+        for scheme in ["onedrive", "google-drive", "dav", "davs"] {
+            assert!(parse_location(&format!("{scheme}://user:secret@host/folder")).is_err());
+            assert!(parse_location(&format!("{scheme}:///folder")).is_err());
+        }
+        assert!(!supported(&gio::File::for_uri("trash:///")));
+        assert!(!supported(&gio::File::for_uri(
+            "https://cloud.example/files"
+        )));
     }
     #[test]
     fn filename_sort_is_natural() {

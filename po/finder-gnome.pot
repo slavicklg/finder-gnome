@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: finder-gnome 1.0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 23:15+0100\n"
+"POT-Creation-Date: 2026-10-28 23:59+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgstr ""
 msgid "No applications installed"
 msgstr ""
 
-#: src/applications.rs:79 src/ui.rs:1814
+#: src/applications.rs:79 src/ui.rs:1811
 msgid "Loading applications…"
 msgstr ""
 
@@ -40,12 +40,12 @@ msgstr ""
 msgid "No matching applications"
 msgstr ""
 
-#: src/applications.rs:332 src/preview.rs:533 src/ui.rs:3485
+#: src/applications.rs:332 src/preview.rs:528 src/ui.rs:3496
 msgid "Open"
 msgstr ""
 
 #: src/applications.rs:333 src/properties.rs:12 src/ui/trash.rs:107
-#: src/ui.rs:3493
+#: src/ui.rs:3504
 msgid "Properties"
 msgstr ""
 
@@ -65,16 +65,16 @@ msgstr ""
 msgid "A tag with this name already exists."
 msgstr ""
 
-#: src/connections.rs:30 src/connections.rs:142 src/connections.rs:151
-#: src/connections.rs:159 src/connections.rs:179 src/ui/system.rs:381
+#: src/connections.rs:61 src/connections.rs:151 src/connections.rs:160
+#: src/connections.rs:168 src/connections.rs:188 src/ui/system.rs:414
 msgid "Connect"
 msgstr ""
 
-#: src/connections.rs:32
+#: src/connections.rs:63
 msgid "Unsupported or unsafe folder address."
 msgstr ""
 
-#: src/connections.rs:181
+#: src/connections.rs:190
 msgid "Connection cancelled."
 msgstr ""
 
@@ -138,7 +138,7 @@ msgstr ""
 msgid "The item is no longer available."
 msgstr ""
 
-#: src/errors.rs:69 src/ui.rs:3224
+#: src/errors.rs:69 src/ui.rs:3235
 msgid "Unable to complete the action"
 msgstr ""
 
@@ -158,27 +158,29 @@ msgstr ""
 msgid "Enter a name without slashes. The names “.” and “..” are not allowed."
 msgstr ""
 
-#: src/files.rs:197
+#: src/files.rs:186
+msgid ""
+"Use a local path, smb://, sftp://, onedrive://, google-drive://, dav:// or "
+"davs:// address without a password."
+msgstr ""
+
+#: src/files.rs:211
 msgid "Enter a valid folder URI."
 msgstr ""
 
-#: src/files.rs:202
-msgid "Use a local path, smb:// or sftp:// address."
-msgstr ""
-
-#: src/files.rs:206
+#: src/files.rs:223
 msgid "Do not include passwords in addresses. Use the connection dialog."
 msgstr ""
 
-#: src/files.rs:210
+#: src/files.rs:227
 msgid "Enter a server hostname."
 msgstr ""
 
-#: src/files.rs:227
+#: src/files.rs:244
 msgid "Enter an absolute folder path."
 msgstr ""
 
-#: src/files.rs:246 src/files.rs:261
+#: src/files.rs:263 src/files.rs:278
 msgid "The clipboard does not contain files."
 msgstr ""
 
@@ -190,11 +192,11 @@ msgstr ""
 msgid "The item has changed outside this operation. Undo/Redo was stopped."
 msgstr ""
 
-#: src/operations.rs:49 src/ui.rs:2835 src/ui.rs:3495
+#: src/operations.rs:49 src/ui.rs:2846 src/ui.rs:3506
 msgid "New Folder"
 msgstr ""
 
-#: src/operations.rs:50 src/ui.rs:2833 src/ui.rs:2843 src/ui.rs:3505
+#: src/operations.rs:50 src/ui.rs:2844 src/ui.rs:2854 src/ui.rs:3516
 msgid "Rename"
 msgstr ""
 
@@ -202,7 +204,7 @@ msgstr ""
 msgid "Move"
 msgstr ""
 
-#: src/operations.rs:52 src/ui/file_commands.rs:99 src/ui.rs:3499
+#: src/operations.rs:52 src/ui/file_commands.rs:99 src/ui.rs:3510
 msgid "Copy"
 msgstr ""
 
@@ -214,11 +216,11 @@ msgstr ""
 msgid "Delete from Trash"
 msgstr ""
 
-#: src/operations.rs:55 src/ui.rs:3526
+#: src/operations.rs:55 src/ui.rs:3537
 msgid "Move to Trash"
 msgstr ""
 
-#: src/operations.rs:56 src/ui.rs:2910
+#: src/operations.rs:56 src/ui.rs:2921
 msgid "Delete Permanently"
 msgstr ""
 
@@ -393,57 +395,53 @@ msgstr ""
 msgid "Invalid PDF page dimensions."
 msgstr ""
 
-#: src/preview.rs:524
+#: src/preview.rs:519
 msgid "Previous Page"
 msgstr ""
 
-#: src/preview.rs:528
+#: src/preview.rs:523
 msgid "Next Page"
 msgstr ""
 
-#: src/preview.rs:532
+#: src/preview.rs:527
 msgid "Actual Size"
 msgstr ""
 
-#: src/preview.rs:534 src/ui.rs:3486
+#: src/preview.rs:529 src/ui.rs:3497
 msgid "Open With…"
 msgstr ""
 
-#: src/preview.rs:687
+#: src/preview.rs:681
 msgid "Preview unavailable"
 msgstr ""
 
-#: src/preview.rs:734
+#: src/preview.rs:728
 msgid "Select a file to preview"
 msgstr ""
 
-#: src/preview.rs:740
+#: src/preview.rs:734
 msgid "{kind} · {size} · {modified}"
 msgstr ""
 
-#: src/preview.rs:747
+#: src/preview.rs:741
 msgid "Preview — download on request"
 msgstr ""
 
-#: src/preview.rs:805
+#: src/preview.rs:799
 msgid "Page {page} of {pages}"
 msgstr ""
 
-#: src/preview.rs:830
+#: src/preview.rs:824
 msgid "Showing the first 256 KiB."
 msgstr ""
 
-#: src/preview.rs:851
-msgid "Open With"
-msgstr ""
-
-#: src/preview.rs:852 src/preview.rs:888 src/properties.rs:14
-#: src/ui/system.rs:824 src/ui/system.rs:934 src/ui.rs:3242
-msgid "Close"
-msgstr ""
-
-#: src/preview.rs:885
+#: src/preview.rs:861
 msgid "Unable to open file"
+msgstr ""
+
+#: src/preview.rs:864 src/properties.rs:14 src/ui/system.rs:861
+#: src/ui/system.rs:971 src/ui.rs:3253
+msgid "Close"
 msgstr ""
 
 #: src/properties/permissions.rs:34
@@ -510,7 +508,7 @@ msgstr ""
 msgid "Change permissions"
 msgstr ""
 
-#: src/properties.rs:57 src/properties.rs:141 src/ui.rs:1149 src/ui.rs:2579
+#: src/properties.rs:57 src/properties.rs:141 src/ui.rs:1148 src/ui.rs:2590
 msgid "Name"
 msgstr ""
 
@@ -534,7 +532,7 @@ msgstr ""
 msgid "Desktop File Properties…"
 msgstr ""
 
-#: src/properties.rs:102 src/ui.rs:370 src/ui.rs:1951
+#: src/properties.rs:102 src/ui.rs:370 src/ui.rs:1948
 msgid "Loading…"
 msgstr ""
 
@@ -559,7 +557,7 @@ msgid "Symbolic Link"
 msgstr ""
 
 #: src/properties.rs:160 src/properties.rs:170 src/properties.rs:229
-#: src/ui.rs:1150 src/ui.rs:1227 src/ui.rs:2580
+#: src/ui.rs:1149 src/ui.rs:1226 src/ui.rs:2591
 msgid "Size"
 msgstr ""
 
@@ -687,164 +685,165 @@ msgid ""
 "{error}"
 msgstr ""
 
-#: src/ui/system.rs:58
+#: src/ui/system.rs:82
 msgid "Select this tab to connect."
 msgstr ""
 
-#: src/ui/system.rs:160 src/ui.rs:1766
+#: src/ui/system.rs:184 src/ui.rs:1763
 msgid "Search Results"
 msgstr ""
 
-#: src/ui/system.rs:164 src/ui.rs:1767
+#: src/ui/system.rs:188 src/ui.rs:1764
 msgid "Tagged Files"
 msgstr ""
 
-#: src/ui/system.rs:359
+#: src/ui/system.rs:390
 msgid "Connect to Server"
 msgstr ""
 
-#: src/ui/system.rs:359
+#: src/ui/system.rs:391
 msgid ""
-"Enter an smb:// or sftp:// address. Passwords are requested securely by the "
-"system."
+"Enter an smb://, sftp://, onedrive://, google-drive://, dav:// or davs:// "
+"address. Configure cloud accounts in GNOME Online Accounts first. Passwords "
+"are requested securely by the system."
 msgstr ""
 
-#: src/ui/system.rs:381 src/ui/system.rs:523 src/ui/system.rs:958
-#: src/ui/trash.rs:85 src/ui.rs:2839 src/ui.rs:2909
+#: src/ui/system.rs:414 src/ui/system.rs:560 src/ui/system.rs:995
+#: src/ui/trash.rs:85 src/ui.rs:2850 src/ui.rs:2920
 msgid "Cancel"
 msgstr ""
 
-#: src/ui/system.rs:405
+#: src/ui/system.rs:438
 msgid "Locations"
 msgstr ""
 
-#: src/ui/system.rs:406 src/ui.rs:3535
+#: src/ui/system.rs:439 src/ui.rs:3546
 msgid "Connect to Server…"
 msgstr ""
 
-#: src/ui/system.rs:439
+#: src/ui/system.rs:470
 msgid "Disconnect or Eject"
 msgstr ""
 
-#: src/ui/system.rs:516
+#: src/ui/system.rs:553
 msgid "Eject Disk?"
 msgstr ""
 
-#: src/ui/system.rs:518
+#: src/ui/system.rs:555
 msgid "Disconnect Disk?"
 msgstr ""
 
-#: src/ui/system.rs:520
+#: src/ui/system.rs:557
 msgid "Disconnect “{name}” from the system?"
 msgstr ""
 
-#: src/ui/system.rs:526
+#: src/ui/system.rs:563
 msgid "Eject"
 msgstr ""
 
-#: src/ui/system.rs:526
+#: src/ui/system.rs:563
 msgid "Disconnect"
 msgstr ""
 
-#: src/ui/system.rs:541 src/ui.rs:1008
+#: src/ui/system.rs:578 src/ui.rs:1007
 msgid "File operations are running"
 msgstr ""
 
-#: src/ui/system.rs:543
+#: src/ui/system.rs:580
 msgid "Wait, or cancel running operations before disconnecting this device."
 msgstr ""
 
-#: src/ui/system.rs:547 src/ui.rs:1013
+#: src/ui/system.rs:584 src/ui.rs:1012
 msgid "Stay"
 msgstr ""
 
-#: src/ui/system.rs:548
+#: src/ui/system.rs:585
 msgid "Cancel Operations and Disconnect"
 msgstr ""
 
-#: src/ui/system.rs:600
+#: src/ui/system.rs:637
 msgid ""
 "Tags could not be updated. File operations remain available.\n"
 "{error}"
 msgstr ""
 
-#: src/ui/system.rs:624 src/ui/system.rs:785
+#: src/ui/system.rs:661 src/ui/system.rs:822
 msgid "Tags"
 msgstr ""
 
-#: src/ui/system.rs:648 src/ui.rs:3537
+#: src/ui/system.rs:685 src/ui.rs:3548
 msgid "Manage Tags…"
 msgstr ""
 
-#: src/ui/system.rs:786
+#: src/ui/system.rs:823
 msgid "Changes apply immediately to the selected files."
 msgstr ""
 
-#: src/ui/system.rs:811 src/ui/undo_tests.rs:66 src/ui/undo_tests.rs:142
+#: src/ui/system.rs:848 src/ui/undo_tests.rs:66 src/ui/undo_tests.rs:142
 msgid "Change Tags"
 msgstr ""
 
-#: src/ui/system.rs:840
+#: src/ui/system.rs:877
 msgid "Manage Tags"
 msgstr ""
 
-#: src/ui/system.rs:842
+#: src/ui/system.rs:879
 msgid "Deleting a tag removes its assignments. Files are kept."
 msgstr ""
 
-#: src/ui/system.rs:849
+#: src/ui/system.rs:886
 msgid "New tag name"
 msgstr ""
 
-#: src/ui/system.rs:860
+#: src/ui/system.rs:897
 msgid "Red"
 msgstr ""
 
-#: src/ui/system.rs:861
+#: src/ui/system.rs:898
 msgid "Orange"
 msgstr ""
 
-#: src/ui/system.rs:862
+#: src/ui/system.rs:899
 msgid "Yellow"
 msgstr ""
 
-#: src/ui/system.rs:863
+#: src/ui/system.rs:900
 msgid "Green"
 msgstr ""
 
-#: src/ui/system.rs:864
+#: src/ui/system.rs:901
 msgid "Blue"
 msgstr ""
 
-#: src/ui/system.rs:865
+#: src/ui/system.rs:902
 msgid "Purple"
 msgstr ""
 
-#: src/ui/system.rs:866
+#: src/ui/system.rs:903
 msgid "Gray"
 msgstr ""
 
-#: src/ui/system.rs:872
+#: src/ui/system.rs:909
 msgid "Save"
 msgstr ""
 
-#: src/ui/system.rs:887
+#: src/ui/system.rs:924
 msgid "Edit Tag"
 msgstr ""
 
-#: src/ui/system.rs:902
+#: src/ui/system.rs:939
 msgid "Delete"
 msgstr ""
 
-#: src/ui/system.rs:911
+#: src/ui/system.rs:948
 msgid "Delete Tag"
 msgstr ""
 
-#: src/ui/system.rs:967
+#: src/ui/system.rs:1004
 msgid "Retry Failed Items"
 msgstr ""
 
-#: src/ui/system.rs:1049
+#: src/ui/system.rs:1086
 msgid "The file operation worker is unavailable."
 msgstr ""
 
@@ -852,7 +851,7 @@ msgstr ""
 msgid "Restore To"
 msgstr ""
 
-#: src/ui/trash.rs:33 src/ui/trash.rs:108 src/ui.rs:2000 src/ui.rs:3516
+#: src/ui/trash.rs:33 src/ui/trash.rs:108 src/ui.rs:1997 src/ui.rs:3527
 msgid "Restore"
 msgstr ""
 
@@ -870,19 +869,19 @@ msgstr ""
 msgid "Empty Trash"
 msgstr ""
 
-#: src/ui/trash.rs:109 src/ui.rs:3517
+#: src/ui/trash.rs:109 src/ui.rs:3528
 msgid "Restore To…"
 msgstr ""
 
-#: src/ui/trash.rs:110 src/ui.rs:3504
+#: src/ui/trash.rs:110 src/ui.rs:3515
 msgid "Select All"
 msgstr ""
 
-#: src/ui/trash.rs:111 src/ui.rs:3527
+#: src/ui/trash.rs:111 src/ui.rs:3538
 msgid "Delete Permanently…"
 msgstr ""
 
-#: src/ui/trash.rs:112 src/ui.rs:2006 src/ui.rs:3518
+#: src/ui/trash.rs:112 src/ui.rs:2003 src/ui.rs:3529
 msgid "Empty Trash…"
 msgstr ""
 
@@ -896,7 +895,7 @@ msgstr ""
 msgid "Undo {action}"
 msgstr ""
 
-#: src/ui/undo.rs:128 src/ui.rs:200 src/ui.rs:3480
+#: src/ui/undo.rs:128 src/ui.rs:200 src/ui.rs:3491
 msgid "Undo"
 msgstr ""
 
@@ -904,7 +903,7 @@ msgstr ""
 msgid "Redo {action}"
 msgstr ""
 
-#: src/ui/undo.rs:133 src/ui.rs:201 src/ui.rs:3481
+#: src/ui/undo.rs:133 src/ui.rs:201 src/ui.rs:3492
 msgid "Redo"
 msgstr ""
 
@@ -914,7 +913,7 @@ msgid ""
 "They will be retried when the files are available."
 msgstr ""
 
-#: src/ui.rs:187 src/ui.rs:664 src/ui.rs:3546
+#: src/ui.rs:187 src/ui.rs:662 src/ui.rs:3557
 msgid "New Tab"
 msgstr ""
 
@@ -934,19 +933,19 @@ msgstr ""
 msgid "Enter a folder path"
 msgstr ""
 
-#: src/ui.rs:222 src/ui.rs:1125
+#: src/ui.rs:222 src/ui.rs:1124
 msgid "Icons"
 msgstr ""
 
-#: src/ui.rs:223 src/ui.rs:1126
+#: src/ui.rs:223 src/ui.rs:1125
 msgid "List"
 msgstr ""
 
-#: src/ui.rs:224 src/ui.rs:1127
+#: src/ui.rs:224 src/ui.rs:1126
 msgid "Columns"
 msgstr ""
 
-#: src/ui.rs:225 src/ui.rs:1128
+#: src/ui.rs:225 src/ui.rs:1127
 msgid "Gallery"
 msgstr ""
 
@@ -966,11 +965,11 @@ msgstr ""
 msgid "Search filenames…"
 msgstr ""
 
-#: src/ui.rs:301 src/ui.rs:1119
+#: src/ui.rs:301 src/ui.rs:1118
 msgid "This Folder"
 msgstr ""
 
-#: src/ui.rs:301 src/ui.rs:327 src/ui.rs:1509
+#: src/ui.rs:301 src/ui.rs:327 src/ui.rs:1508
 msgid "Home"
 msgstr ""
 
@@ -982,7 +981,7 @@ msgstr ""
 msgid "Close Search"
 msgstr ""
 
-#: src/ui.rs:344 src/ui.rs:2973 src/ui.rs:3084
+#: src/ui.rs:344 src/ui.rs:2984 src/ui.rs:3095
 msgid "Cancel All"
 msgstr ""
 
@@ -990,234 +989,230 @@ msgstr ""
 msgid "Background Tasks"
 msgstr ""
 
-#: src/ui.rs:460 src/ui.rs:695 src/ui.rs:1607
-msgid "Use a local path, smb:// or sftp:// address without a password."
-msgstr ""
-
-#: src/ui.rs:470
+#: src/ui.rs:468
 msgid "Unable to save application state: {error}"
 msgstr ""
 
-#: src/ui.rs:484
+#: src/ui.rs:482
 msgid ""
 "Some saved settings could not be read. Defaults were loaded.\n"
 "{files}"
 msgstr ""
 
-#: src/ui.rs:597 src/ui.rs:3547
+#: src/ui.rs:595 src/ui.rs:3558
 msgid "Duplicate Tab"
 msgstr ""
 
-#: src/ui.rs:598 src/ui.rs:3548
+#: src/ui.rs:596 src/ui.rs:3559
 msgid "Close Tab"
 msgstr ""
 
-#: src/ui.rs:709 src/ui.rs:712 src/ui.rs:717 src/ui.rs:1514 src/ui.rs:1678
-#: src/ui.rs:1680 src/ui.rs:1682
+#: src/ui.rs:705 src/ui.rs:708 src/ui.rs:713 src/ui.rs:1513 src/ui.rs:1675
+#: src/ui.rs:1677 src/ui.rs:1679
 msgid "Applications"
 msgstr ""
 
-#: src/ui.rs:1010
+#: src/ui.rs:1009
 msgid "Closing will cancel pending work. Completed changes will be kept."
 msgstr ""
 
-#: src/ui.rs:1013
+#: src/ui.rs:1012
 msgid "Cancel and Close"
 msgstr ""
 
-#: src/ui.rs:1033
+#: src/ui.rs:1032
 msgid "Preferences"
 msgstr ""
 
-#: src/ui.rs:1037
+#: src/ui.rs:1036
 msgid "General"
 msgstr ""
 
-#: src/ui.rs:1040
+#: src/ui.rs:1039
 msgid "Appearance"
 msgstr ""
 
-#: src/ui.rs:1042
+#: src/ui.rs:1041
 msgid "System"
 msgstr ""
 
-#: src/ui.rs:1043
+#: src/ui.rs:1042
 msgid "Light"
 msgstr ""
 
-#: src/ui.rs:1044
+#: src/ui.rs:1043
 msgid "Dark"
 msgstr ""
 
-#: src/ui.rs:1064
+#: src/ui.rs:1063
 msgid "Restore tabs on startup"
 msgstr ""
 
-#: src/ui.rs:1115
+#: src/ui.rs:1114
 msgid "View Options"
 msgstr ""
 
-#: src/ui.rs:1123
+#: src/ui.rs:1122
 msgid "View"
 msgstr ""
 
-#: src/ui.rs:1147
+#: src/ui.rs:1146
 msgid "Sort By"
 msgstr ""
 
-#: src/ui.rs:1151 src/ui.rs:1228 src/ui.rs:2581
+#: src/ui.rs:1150 src/ui.rs:1227 src/ui.rs:2592
 msgid "Kind"
 msgstr ""
 
-#: src/ui.rs:1152 src/ui.rs:1229 src/ui.rs:2582
+#: src/ui.rs:1151 src/ui.rs:1228 src/ui.rs:2593
 msgid "Date Modified"
 msgstr ""
 
-#: src/ui.rs:1164
+#: src/ui.rs:1163
 msgid "Descending"
 msgstr ""
 
-#: src/ui.rs:1165
+#: src/ui.rs:1164
 msgid "Folders First"
 msgstr ""
 
-#: src/ui.rs:1166 src/ui.rs:3538
+#: src/ui.rs:1165 src/ui.rs:3549
 msgid "Show Hidden Files"
 msgstr ""
 
-#: src/ui.rs:1167
+#: src/ui.rs:1166
 msgid "Show Thumbnails"
 msgstr ""
 
-#: src/ui.rs:1187
+#: src/ui.rs:1186
 msgid "Icon Size"
 msgstr ""
 
-#: src/ui.rs:1205
+#: src/ui.rs:1204
 msgid "Columns Width"
 msgstr ""
 
-#: src/ui.rs:1224
+#: src/ui.rs:1223
 msgid "List Columns"
 msgstr ""
 
-#: src/ui.rs:1245
+#: src/ui.rs:1244
 msgid "Use as Defaults"
 msgstr ""
 
-#: src/ui.rs:1254
+#: src/ui.rs:1253
 msgid "Reset Folder View"
 msgstr ""
 
-#: src/ui.rs:1485
+#: src/ui.rs:1484
 msgid "A Finder-inspired file manager for Ubuntu."
 msgstr ""
 
-#: src/ui.rs:1522
+#: src/ui.rs:1521
 msgid "Desktop"
 msgstr ""
 
-#: src/ui.rs:1527
+#: src/ui.rs:1526
 msgid "Documents"
 msgstr ""
 
-#: src/ui.rs:1532
+#: src/ui.rs:1531
 msgid "Downloads"
 msgstr ""
 
-#: src/ui.rs:1537
+#: src/ui.rs:1536
 msgid "Music"
 msgstr ""
 
-#: src/ui.rs:1542
+#: src/ui.rs:1541
 msgid "Pictures"
 msgstr ""
 
-#: src/ui.rs:1547
+#: src/ui.rs:1546
 msgid "Videos"
 msgstr ""
 
-#: src/ui.rs:1564 src/ui.rs:1762 src/ui.rs:1792
+#: src/ui.rs:1563 src/ui.rs:1759 src/ui.rs:1789
 msgid "File System"
 msgstr ""
 
-#: src/ui.rs:1569 src/ui.rs:1772 src/ui.rs:1788
+#: src/ui.rs:1568 src/ui.rs:1769 src/ui.rs:1785
 msgid "Trash"
 msgstr ""
 
-#: src/ui.rs:1817
+#: src/ui.rs:1814
 msgid "{count} application"
 msgid_plural "{count} applications"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:1844
+#: src/ui.rs:1841
 msgid "{count} item"
 msgid_plural "{count} items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:1846
+#: src/ui.rs:1843
 msgid "{items}, {selected}"
 msgstr ""
 
-#: src/ui.rs:1850
+#: src/ui.rs:1847
 msgid "{count} selected"
 msgid_plural "{count} selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:1854
+#: src/ui.rs:1851
 msgid "Loading… {items}"
 msgstr ""
 
-#: src/ui.rs:1957
+#: src/ui.rs:1954
 msgid "This folder is empty"
 msgstr ""
 
-#: src/ui.rs:1967
+#: src/ui.rs:1964
 msgid "Try Again"
 msgstr ""
 
-#: src/ui.rs:1992
+#: src/ui.rs:1989
 msgid "Restore items or permanently delete them."
 msgstr ""
 
-#: src/ui.rs:2484 src/ui.rs:3488
+#: src/ui.rs:2493 src/ui.rs:3499
 msgid "Quick Look"
 msgstr ""
 
-#: src/ui.rs:2491
+#: src/ui.rs:2500
 msgid "Previous File"
 msgstr ""
 
-#: src/ui.rs:2495
+#: src/ui.rs:2504
 msgid "Next File"
 msgstr ""
 
-#: src/ui.rs:2729
+#: src/ui.rs:2740
 msgid ""
 "Executable files are not launched automatically. Open this file with another "
 "application."
 msgstr ""
 
-#: src/ui.rs:2790
+#: src/ui.rs:2801
 msgid "The clipboard file list is too large."
 msgstr ""
 
-#: src/ui.rs:2845
+#: src/ui.rs:2856
 msgid "Create"
 msgstr ""
 
-#: src/ui.rs:2856
+#: src/ui.rs:2867
 msgid "Untitled Folder"
 msgstr ""
 
-#: src/ui.rs:2901
+#: src/ui.rs:2912
 msgid "Delete permanently?"
 msgstr ""
 
-#: src/ui.rs:2903
+#: src/ui.rs:2914
 msgid ""
 "{count} item will be permanently deleted. This cannot be undone and clears "
 "Undo/Redo history."
@@ -1227,137 +1222,137 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:2975
+#: src/ui.rs:2986
 msgid "Waiting for file operation…"
 msgstr ""
 
-#: src/ui.rs:3025
+#: src/ui.rs:3036
 msgid "Reconnect and Retry"
 msgstr ""
 
-#: src/ui.rs:3044
+#: src/ui.rs:3055
 msgid "{name} — {completed}"
 msgstr ""
 
-#: src/ui.rs:3047 src/ui.rs:3090
+#: src/ui.rs:3058 src/ui.rs:3101
 msgid "{count} completed"
 msgid_plural "{count} completed"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:3082
+#: src/ui.rs:3093
 msgid "Dismiss"
 msgstr ""
 
-#: src/ui.rs:3086
+#: src/ui.rs:3097
 msgid "{completed}; {skipped}"
 msgstr ""
 
-#: src/ui.rs:3098
+#: src/ui.rs:3109
 msgid "{count} skipped"
 msgid_plural "{count} skipped"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ui.rs:3104
+#: src/ui.rs:3115
 msgid "Cancelled. {summary} Completed changes were kept."
 msgstr ""
 
-#: src/ui.rs:3142
+#: src/ui.rs:3153
 msgid "An item with this name already exists"
 msgstr ""
 
-#: src/ui.rs:3144
+#: src/ui.rs:3155
 msgid ""
 "Source: {source}\n"
 "Destination: {destination}\n"
 "Replacing a file cannot be undone and clears Undo/Redo history."
 msgstr ""
 
-#: src/ui.rs:3150
+#: src/ui.rs:3161
 msgid "Cancel Operation"
 msgstr ""
 
-#: src/ui.rs:3151
+#: src/ui.rs:3162
 msgid "Skip"
 msgstr ""
 
-#: src/ui.rs:3152
+#: src/ui.rs:3163
 msgid "Keep Both"
 msgstr ""
 
-#: src/ui.rs:3155
+#: src/ui.rs:3166
 msgid "Merge"
 msgstr ""
 
-#: src/ui.rs:3158
+#: src/ui.rs:3169
 msgid "Replace"
 msgstr ""
 
-#: src/ui.rs:3164
+#: src/ui.rs:3175
 msgid "Apply to remaining conflicts of this type"
 msgstr ""
 
-#: src/ui.rs:3487
+#: src/ui.rs:3498
 msgid "Open in New Tab"
 msgstr ""
 
-#: src/ui.rs:3490
+#: src/ui.rs:3501
 msgid "Show in Enclosing Folder"
 msgstr ""
 
-#: src/ui.rs:3494
+#: src/ui.rs:3505
 msgid "Tags…"
 msgstr ""
 
-#: src/ui.rs:3500
+#: src/ui.rs:3511
 msgid "Cut"
 msgstr ""
 
-#: src/ui.rs:3501
+#: src/ui.rs:3512
 msgid "Copy To…"
 msgstr ""
 
-#: src/ui.rs:3502
+#: src/ui.rs:3513
 msgid "Move To…"
 msgstr ""
 
-#: src/ui.rs:3503
+#: src/ui.rs:3514
 msgid "Paste"
 msgstr ""
 
-#: src/ui.rs:3511
+#: src/ui.rs:3522
 msgid "Compress…"
 msgstr ""
 
-#: src/ui.rs:3512
+#: src/ui.rs:3523
 msgid "Extract…"
 msgstr ""
 
-#: src/ui.rs:3536
+#: src/ui.rs:3547
 msgid "Search…"
 msgstr ""
 
-#: src/ui.rs:3539
+#: src/ui.rs:3550
 msgid "Reload"
 msgstr ""
 
-#: src/ui.rs:3540
+#: src/ui.rs:3551
 msgid "Enter Location…"
 msgstr ""
 
-#: src/ui.rs:3541
+#: src/ui.rs:3552
 msgid "View Options…"
 msgstr ""
 
-#: src/ui.rs:3542
+#: src/ui.rs:3553
 msgid "Preferences…"
 msgstr ""
 
-#: src/ui.rs:3543
+#: src/ui.rs:3554
 msgid "About Finder Gnome"
 msgstr ""
 
-#: src/ui.rs:3549
+#: src/ui.rs:3560
 msgid "Tabs"
 msgstr ""

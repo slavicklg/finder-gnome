@@ -42,6 +42,30 @@ fn section(container: &gtk::Box, title: &str) {
             .build(),
     );
 }
+
+pub(super) fn location_content(
+    name: &str,
+    root: Option<&gio::File>,
+    fallback: &gio::Icon,
+) -> gtk::Box {
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let icon = root
+        .and_then(files::cloud_icon_name)
+        .map(gtk::Image::from_icon_name)
+        .unwrap_or_else(|| gtk::Image::from_gicon(fallback));
+    icon.set_pixel_size(16);
+    content.append(&icon);
+    content.append(
+        &gtk::Label::builder()
+            .label(name)
+            .xalign(0.0)
+            .hexpand(true)
+            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .max_width_chars(18)
+            .build(),
+    );
+    content
+}
 impl Browser {
     pub(super) fn is_collection(&self) -> bool {
         self.active_pane().is_some_and(|p| {
@@ -267,6 +291,12 @@ impl Browser {
             }
         });
         let weak = Rc::downgrade(self);
+        self.volumes.connect_volume_changed(move |_, _| {
+            if let Some(b) = weak.upgrade() {
+                b.refresh_locations();
+            }
+        });
+        let weak = Rc::downgrade(self);
         self.volumes.connect_mount_removed(move |_, mount| {
             if let Some(b) = weak.upgrade() {
                 let root = mount.root();
@@ -356,7 +386,10 @@ impl Browser {
         ));
     }
     fn connect_server(self: &Rc<Self>) {
-        let dialog=adw::AlertDialog::builder().heading(tr("Connect to Server")).body(tr("Enter an smb:// or sftp:// address. Passwords are requested securely by the system.")).build();
+        let dialog = adw::AlertDialog::builder()
+            .heading(tr("Connect to Server"))
+            .body(tr("Enter an smb://, sftp://, onedrive://, google-drive://, dav:// or davs:// address. Configure cloud accounts in GNOME Online Accounts first. Passwords are requested securely by the system."))
+            .build();
         let box_ = gtk::Box::new(gtk::Orientation::Vertical, 6);
         let entry = gtk::Entry::builder()
             .placeholder_text("sftp://user@server/folder")
@@ -413,17 +446,15 @@ impl Browser {
             }
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
             let open = gtk::Button::new();
-            open.set_child(Some(
-                &gtk::Label::builder()
-                    .label(mount.name())
-                    .xalign(0.0)
-                    .ellipsize(gtk::pango::EllipsizeMode::End)
-                    .max_width_chars(18)
-                    .build(),
-            ));
+            let file = mount.root();
+            open.set_child(Some(&location_content(
+                &mount.name(),
+                Some(&file),
+                &mount.symbolic_icon(),
+            )));
+            open.set_tooltip_text(Some(&mount.name()));
             open.add_css_class("flat");
             open.set_hexpand(true);
-            let file = mount.root();
             let weak = Rc::downgrade(self);
             let target = file.clone();
             open.connect_clicked(move |_| {
@@ -451,7 +482,13 @@ impl Browser {
             if volume.get_mount().is_some() || !volume.can_mount() {
                 continue;
             }
-            let button = gtk::Button::with_label(&volume.name());
+            let button = gtk::Button::new();
+            button.set_child(Some(&location_content(
+                &volume.name(),
+                volume.activation_root().as_ref(),
+                &volume.symbolic_icon(),
+            )));
+            button.set_tooltip_text(Some(&volume.name()));
             button.add_css_class("flat");
             let weak = Rc::downgrade(self);
             button.connect_clicked(move |_| {

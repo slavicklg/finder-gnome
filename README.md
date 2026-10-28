@@ -262,11 +262,22 @@ Install the runtime integration backends on the desktop:
 sudo apt install gvfs gvfs-backends gvfs-fuse file-roller
 ```
 
-**Connect to Server** (Ctrl+K) accepts `smb://server/share` and
-`sftp://user@server/path`. Authentication, SSH host trust and credential storage
+**Connect to Server** (Ctrl+K) accepts `smb://server/share`,
+`sftp://user@server/path`, `onedrive://…`, `google-drive://…` and WebDAV
+(`dav://…` / `davs://…`, for example Nextcloud). Authentication, SSH host trust and credential storage
 use GNOME/GVfs dialogs and the system keyring. Passwords in addresses are rejected;
 recent connections store addresses only. Restored inactive network tabs wait until
 selected before connecting. Disconnected tabs remain available with Retry.
+
+Cloud accounts configured in GNOME **Online Accounts** appear automatically under
+**Locations**, including accounts waiting to be mounted. OneDrive and Google Drive
+have bundled provider icons; other locations use their system-provided icons.
+Open an account to mount it through GVfs. Use the account's complete URI when
+entering an address manually; a bare `onedrive://` has no account identifier.
+Cloud access requires the corresponding installed GVfs backend and an authorized
+system account. Google Drive availability depends on the distribution's GVfs build;
+some recent builds omit that backend. Existing local/FUSE mounts remain accessible
+as local folders and use the mount icon supplied by the system.
 
 Drag the divider beside the sidebar to resize it. Its width is saved in the
 application settings and restored on the next launch.

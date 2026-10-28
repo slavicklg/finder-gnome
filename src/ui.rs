@@ -456,9 +456,7 @@ impl Browser {
         browser.apply_theme();
         browser.install_system(app);
         if invalid {
-            browser.error(&tr(
-                "Use a local path, smb:// or sftp:// address without a password.",
-            ));
+            browser.error(&files::location_hint());
         }
         let weak = Rc::downgrade(&browser);
         glib::MainContext::default().spawn_local(async move {
@@ -691,9 +689,7 @@ impl Browser {
 
     pub fn open_in_new_tab(self: &Rc<Self>, file: gio::File) {
         if !files::browsable(&file) {
-            self.error(&tr(
-                "Use a local path, smb:// or sftp:// address without a password.",
-            ));
+            self.error(&files::location_hint());
             return;
         }
         let settings = self.settings.borrow().for_file(&file);
@@ -1606,9 +1602,7 @@ impl Browser {
 
     pub fn navigate(self: &Rc<Self>, file: gio::File, selected: HashSet<String>) {
         if !files::browsable(&file) {
-            self.error(&tr(
-                "Use a local path, smb:// or sftp:// address without a password.",
-            ));
+            self.error(&files::location_hint());
             return;
         }
         if !self.defer_load.get() {
@@ -3693,6 +3687,34 @@ mod tests {
     fn gui_acceptance() {
         adw::init().unwrap();
         gio::resources_register_include!("finder.gresource").unwrap();
+        let theme = gtk::IconTheme::for_display(&gdk::Display::default().unwrap());
+        theme.add_resource_path("/io/github/finder_gnome/icons");
+        let fallback: gio::Icon = gio::ThemedIcon::new("drive-harddisk-symbolic").upcast();
+        for (uri, expected) in [
+            ("onedrive://account/drive", "finder-onedrive"),
+            ("google-drive://user@gmail.com/", "finder-google-drive"),
+        ] {
+            assert!(theme.has_icon(expected));
+            let content = system::location_content(
+                "Cloud account",
+                Some(&gio::File::for_uri(uri)),
+                &fallback,
+            );
+            let icon = content
+                .first_child()
+                .unwrap()
+                .downcast::<gtk::Image>()
+                .unwrap();
+            assert_eq!(icon.icon_name().as_deref(), Some(expected));
+            assert_eq!(icon.pixel_size(), 16);
+        }
+        let content = system::location_content("Disk", None, &fallback);
+        let icon = content
+            .first_child()
+            .unwrap()
+            .downcast::<gtk::Image>()
+            .unwrap();
+        assert!(icon.gicon().unwrap().equal(Some(&fallback)));
         let css = gtk::CssProvider::new();
         css.load_from_resource("/io/github/finder_gnome/style.css");
         gtk::style_context_add_provider_for_display(

@@ -1,0 +1,7 @@
+<!-- SPDX-FileCopyrightText: 2026 Slavick
+     SPDX-License-Identifier: MIT -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path fill="#0f9d58" d="M5.5 1h5L5 11H0Z"/>
+  <path fill="#f4b400" d="M10.5 1 16 11h-5L5.5 1Z"/>
+  <path fill="#4285f4" d="m0 11 2.5 4h11l2.5-4Z"/>
+</svg>

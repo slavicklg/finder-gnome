@@ -14,6 +14,37 @@ type Waiters = HashMap<String, Vec<async_channel::Sender<Result<(), AppError>>>>
 pub struct Connections {
     pending: RefCell<Waiters>,
 }
+
+fn connection_key(file: &gio::File) -> String {
+    let parsed = glib::Uri::parse(&file.uri(), glib::UriFlags::HAS_PASSWORD).unwrap();
+    // Cloud accounts and WebDAV endpoints can be distinguished by their paths.
+    // Do not merge their authentication results merely because the host matches.
+    if !matches!(parsed.scheme().as_str(), "smb" | "sftp") {
+        return file.uri().to_string();
+    }
+    let share = if parsed.scheme() == "smb" {
+        parsed
+            .path()
+            .split('/')
+            .find(|s| !s.is_empty())
+            .unwrap_or("")
+            .to_string()
+    } else {
+        String::new()
+    };
+    format!(
+        "{}://{}@{}:{}/{}",
+        parsed.scheme(),
+        parsed.user().unwrap_or_default(),
+        parsed.host().unwrap_or_default().to_ascii_lowercase(),
+        if parsed.port() < 0 {
+            if parsed.scheme() == "sftp" { 22 } else { 445 }
+        } else {
+            parsed.port()
+        },
+        share
+    )
+}
 impl Connections {
     pub async fn ensure(
         self: &Rc<Self>,
@@ -35,29 +66,7 @@ impl Connections {
         if file.is_native() {
             return Ok(());
         }
-        let parsed = glib::Uri::parse(&file.uri(), glib::UriFlags::HAS_PASSWORD).unwrap();
-        let share = if parsed.scheme() == "smb" {
-            parsed
-                .path()
-                .split('/')
-                .find(|s| !s.is_empty())
-                .unwrap_or("")
-                .to_string()
-        } else {
-            String::new()
-        };
-        let uri = format!(
-            "{}://{}@{}:{}/{}",
-            parsed.scheme(),
-            parsed.user().unwrap_or_default(),
-            parsed.host().unwrap_or_default().to_ascii_lowercase(),
-            if parsed.port() < 0 {
-                if parsed.scheme() == "sftp" { 22 } else { 445 }
-            } else {
-                parsed.port()
-            },
-            share
-        );
+        let uri = connection_key(file);
         let (tx, rx) = async_channel::bounded(1);
         {
             let mut pending = self.pending.borrow_mut();
@@ -181,5 +190,32 @@ impl Connections {
                 details: tr("Connection cancelled."),
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn connection_keys_keep_cloud_accounts_and_webdav_endpoints_separate() {
+        let key = |uri| connection_key(&gio::File::for_uri(uri));
+        for (first, second) in [
+            (
+                "onedrive://account/drive-a/folder",
+                "onedrive://account/drive-b/folder",
+            ),
+            ("onedrive://account-a/drive", "onedrive://account-b/drive"),
+            (
+                "google-drive://alice@gmail.com/",
+                "google-drive://bob@gmail.com/",
+            ),
+            ("davs://cloud.example/alice/", "davs://cloud.example/bob/"),
+            ("smb://server/first/a", "smb://server/second/b"),
+        ] {
+            assert_ne!(key(first), key(second));
+        }
+        assert_eq!(key("sftp://user@HOST/a"), key("sftp://user@host:22/b"));
+        assert_eq!(key("smb://server/share/a"), key("smb://server:445/share/b"));
     }
 }
