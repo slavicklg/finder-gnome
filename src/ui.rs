@@ -874,6 +874,9 @@ impl Browser {
         ));
     }
     fn persist_now(&self) {
+        if let Some(quick) = self.quick_look.borrow().as_ref() {
+            self.remember_quick_look_size(&quick.window);
+        }
         self.save_active_tab();
         let active_page = self.current_tab.borrow().clone();
         let mut session = Session {
@@ -2400,7 +2403,7 @@ impl Browser {
     fn gallery_view(self: &Rc<Self>, pane: &Rc<Pane>) -> gtk::Widget {
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let weak = Rc::downgrade(self);
-        let preview = PreviewPane::new(self.previews.clone(), &self.window, move |file| {
+        let preview = PreviewPane::new(self.previews.clone(), move |file| {
             if let Some(browser) = weak.upgrade() {
                 browser.open_item(file);
             }
@@ -2452,6 +2455,18 @@ impl Browser {
         }
     }
 
+    fn remember_quick_look_size(&self, window: &adw::Window) {
+        if window.is_maximized() || window.is_fullscreen() {
+            return;
+        }
+        let (width, height) = (window.width(), window.height());
+        if width > 0 && height > 0 {
+            let mut settings = self.settings.borrow_mut();
+            settings.quick_look_width = width;
+            settings.quick_look_height = height;
+        }
+    }
+
     fn toggle_quick_look(self: &Rc<Self>) {
         if self.quick_look.borrow().is_some() {
             self.stop_previews();
@@ -2479,8 +2494,8 @@ impl Browser {
             .unwrap_or(0);
         let window = adw::Window::builder()
             .transient_for(&self.window)
-            .default_width(900)
-            .default_height(650)
+            .default_width(self.settings.borrow().quick_look_width)
+            .default_height(self.settings.borrow().quick_look_height)
             .title(tr("Quick Look"))
             .build();
         let body = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -2499,7 +2514,7 @@ impl Browser {
         header.pack_start(&buttons);
         body.append(&header);
         let weak = Rc::downgrade(self);
-        let preview = PreviewPane::new(self.previews.clone(), &self.window, move |file| {
+        let preview = PreviewPane::new(self.previews.clone(), move |file| {
             if let Some(browser) = weak.upgrade() {
                 browser.open_item(file);
             }
@@ -2541,8 +2556,10 @@ impl Browser {
         });
         quick.window.add_controller(keys);
         let weak = Rc::downgrade(self);
-        quick.window.connect_close_request(move |_| {
+        quick.window.connect_close_request(move |window| {
             if let Some(browser) = weak.upgrade() {
+                browser.remember_quick_look_size(window);
+                browser.schedule_persist();
                 if let Some(quick) = browser.quick_look.borrow_mut().take() {
                     quick.preview.stop();
                 }

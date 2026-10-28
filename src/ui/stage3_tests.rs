@@ -135,8 +135,7 @@ fn stage3_acceptance(browser: &Rc<Browser>) {
     info.set_name("picture.png");
     info.set_display_name("picture.png");
     info.set_content_type("image/png");
-    let preview =
-        crate::preview::PreviewPane::new(browser.previews.clone(), &browser.window, |_| {});
+    let preview = crate::preview::PreviewPane::new(browser.previews.clone(), |_| {});
     preview.show_file(Some(FileItem::from_info(&remote.parent().unwrap(), &info)));
     assert!(preview.test_message().contains("download on request"));
     browser.navigate(root.clone(), HashSet::new());

@@ -97,6 +97,8 @@ pub struct Settings {
     pub restore_tabs: bool,
     pub recent_servers: Vec<String>,
     pub sidebar_width: i32,
+    pub quick_look_width: i32,
+    pub quick_look_height: i32,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -108,6 +110,8 @@ impl Default for Settings {
             restore_tabs: true,
             recent_servers: Vec::new(),
             sidebar_width: 185,
+            quick_look_width: 900,
+            quick_look_height: 650,
         }
     }
 }
@@ -283,6 +287,8 @@ impl Storage {
             .recent_servers
             .retain(|uri| crate::files::safe_uri(uri).is_ok());
         settings.recent_servers.truncate(10);
+        settings.quick_look_width = settings.quick_look_width.clamp(320, 4000);
+        settings.quick_look_height = settings.quick_look_height.clamp(240, 2400);
         settings.defaults.normalize();
         for folder in settings.folders.values_mut() {
             folder.normalize();
@@ -399,7 +405,16 @@ mod tests {
         let path = temp.path().join("settings.json");
         std::fs::write(&path, "{broken").unwrap();
         assert!(load::<Settings>(&path).1.is_some());
-        let mut settings = Settings::default();
+        let legacy: Settings = serde_json::from_str(r#"{"version":1}"#).unwrap();
+        assert_eq!(
+            (legacy.quick_look_width, legacy.quick_look_height),
+            (900, 650)
+        );
+        let mut settings = Settings {
+            quick_look_width: 1120,
+            quick_look_height: 780,
+            ..Default::default()
+        };
         settings.folders.insert(
             "file:///folder%FF".into(),
             FolderSettings {
@@ -410,6 +425,7 @@ mod tests {
         atomic_write(&path, &serde_json::to_vec(&settings).unwrap()).unwrap();
         let (read, warning) = load::<Settings>(&path);
         assert!(warning.is_none());
+        assert_eq!((read.quick_look_width, read.quick_look_height), (1120, 780));
         assert_eq!(read.folders["file:///folder%FF"].mode, ViewMode::Gallery);
     }
 }

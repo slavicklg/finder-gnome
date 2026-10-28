@@ -492,15 +492,10 @@ pub struct PreviewPane {
     pages: Cell<i32>,
     remote_enabled: Cell<bool>,
     service: PreviewService,
-    window: glib::WeakRef<adw::ApplicationWindow>,
 }
 
 impl PreviewPane {
-    pub fn new(
-        service: PreviewService,
-        window: &adw::ApplicationWindow,
-        open: impl Fn(FileItem) + 'static,
-    ) -> Rc<Self> {
+    pub fn new(service: PreviewService, open: impl Fn(FileItem) + 'static) -> Rc<Self> {
         let widget = gtk::Box::new(gtk::Orientation::Vertical, 8);
         widget.set_hexpand(true);
         widget.set_vexpand(true);
@@ -561,7 +556,6 @@ impl PreviewPane {
             pages: Cell::new(0),
             remote_enabled: Cell::new(false),
             service,
-            window: window.downgrade(),
         });
         for (button, delta) in [(&view.previous, -1), (&view.next, 1)] {
             let weak = Rc::downgrade(&view);
@@ -845,64 +839,34 @@ impl PreviewPane {
     }
 
     fn open_with(&self) {
-        let (Some(window), Some(file)) = (self.window.upgrade(), self.file.borrow().clone()) else {
+        // A preview can live in either the gallery or the separate Quick Look window.
+        // Parent the chooser to its actual window so it stays above the preview.
+        let window = self.widget.root().and_downcast::<gtk::Window>();
+        let (Some(window), Some(file)) = (window, self.file.borrow().clone()) else {
             return;
         };
-        let dialog = adw::AlertDialog::builder().heading(tr("Open With")).build();
-        dialog.add_response("close", &tr("Close"));
-        dialog.set_close_response("close");
-        let list = gtk::ListBox::new();
-        list.set_selection_mode(gtk::SelectionMode::None);
-        let mut apps = gio::AppInfo::all_for_type(&file.mime);
-        if apps.is_empty() {
-            apps = gio::AppInfo::all()
-                .into_iter()
-                .filter(|a| a.should_show())
-                .collect();
-        }
-        apps.sort_by_key(|app| glib::CollationKey::from(app.display_name()));
-        for app in apps {
-            let button = gtk::Button::with_label(&app.display_name());
-            button.add_css_class("flat");
-            let file = file.file.clone();
-            let weak = window.downgrade();
-            let weak_dialog = dialog.downgrade();
-            button.connect_clicked(move |_| {
-                let Some(window) = weak.upgrade() else {
+        let launcher = gtk::FileLauncher::new(Some(&file.file));
+        launcher.set_always_ask(true);
+        let weak = window.downgrade();
+        launcher.launch(Some(&window), gio::Cancellable::NONE, move |result| {
+            if let Err(error) = result {
+                if error.matches(gio::IOErrorEnum::Cancelled)
+                    || error.matches(gtk::DialogError::Dismissed)
+                    || error.matches(gtk::DialogError::Cancelled)
+                {
                     return;
-                };
-                if let Some(dialog) = weak_dialog.upgrade() {
-                    dialog.force_close();
                 }
-                let weak = window.downgrade();
-                app.launch_uris_async(
-                    &[file.uri().as_str()],
-                    Some(&gtk::prelude::WidgetExt::display(&window).app_launch_context()),
-                    gio::Cancellable::NONE,
-                    move |result| {
-                        if let (Err(error), Some(window)) = (result, weak.upgrade()) {
-                            let dialog = adw::AlertDialog::builder()
-                                .heading(tr("Unable to open file"))
-                                .body(error.to_string())
-                                .build();
-                            dialog.add_response("close", &tr("Close"));
-                            dialog.set_close_response("close");
-                            dialog.present(Some(&window));
-                        }
-                    },
-                );
-            });
-            list.append(&button);
-        }
-        dialog.set_extra_child(Some(
-            &gtk::ScrolledWindow::builder()
-                .child(&list)
-                .min_content_height(200)
-                .max_content_height(360)
-                .propagate_natural_height(true)
-                .build(),
-        ));
-        dialog.present(Some(&window));
+                if let Some(window) = weak.upgrade() {
+                    let dialog = adw::AlertDialog::builder()
+                        .heading(tr("Unable to open file"))
+                        .body(error.to_string())
+                        .build();
+                    dialog.add_response("close", &tr("Close"));
+                    dialog.set_close_response("close");
+                    dialog.present(Some(&window));
+                }
+            }
+        });
     }
 }
 impl Drop for PreviewPane {
