@@ -12,10 +12,15 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::operation_history::{Step, stamp, verify};
 use crate::{files::validate_name, i18n::tr};
 
 #[derive(Clone, Debug)]
 pub enum Operation {
+    Replay {
+        title: String,
+        steps: Vec<Step>,
+    },
     Retry {
         operation: Box<Operation>,
         completed: Vec<(String, String)>,
@@ -39,6 +44,7 @@ pub enum Operation {
 impl Operation {
     pub fn title(&self) -> String {
         match self {
+            Self::Replay { title, .. } => title.clone(),
             Self::Retry { operation, .. } => operation.title(),
             Self::Create(..) => tr("New Folder"),
             Self::Rename(..) => tr("Rename"),
@@ -52,6 +58,7 @@ impl Operation {
     }
     pub fn locations(&self) -> Vec<gio::File> {
         match self {
+            Self::Replay { steps, .. } => steps.iter().flat_map(Step::locations).collect(),
             Self::Retry { operation, .. } => operation.locations(),
             Self::Create(f, _) => vec![f.clone()],
             Self::Rename(f, _) => vec![f.parent().unwrap_or_else(|| f.clone())],
@@ -91,6 +98,18 @@ pub struct Conflict {
 }
 
 pub enum Event {
+    FileTags {
+        source: String,
+        target: String,
+        tags: Vec<crate::tag_storage::Label>,
+    },
+    TagWarning(String),
+    History {
+        steps: Vec<Step>,
+        remaining: Vec<Step>,
+        irreversible: bool,
+        unrecordable: bool,
+    },
     Changed {
         source: String,
         target: Option<String>,
@@ -118,6 +137,7 @@ pub struct Job {
     pub operation: Operation,
     pub cancel: gio::Cancellable,
     pub events: async_channel::Sender<Event>,
+    pub fallback_tags: std::collections::HashMap<String, Vec<crate::tag_storage::Label>>,
 }
 
 pub fn start_worker() -> mpsc::Sender<Job> {
@@ -163,9 +183,210 @@ struct Context {
     last_progress: Instant,
     completed_targets: Vec<(String, String)>,
     skip_targets: Vec<(String, String)>,
+    inverses: Vec<Step>,
+    fallback_tags: std::collections::HashMap<String, Vec<crate::tag_storage::Label>>,
+    irreversible: bool,
+    unrecordable: bool,
 }
 
 impl Context {
+    fn send_tags(
+        &self,
+        source: &gio::File,
+        target: &gio::File,
+        tags: Option<Vec<crate::tag_storage::Label>>,
+    ) {
+        if let Some(tags) = tags {
+            let _ = self.events.send_blocking(Event::FileTags {
+                source: source.uri().to_string(),
+                target: target.uri().to_string(),
+                tags,
+            });
+        }
+    }
+    fn read_tags(&self, file: &gio::File) -> Option<Vec<crate::tag_storage::Label>> {
+        if let Some(tags) = self.fallback_tags.get(file.uri().as_str()) {
+            return Some(tags.clone());
+        }
+        match crate::tag_storage::file_labels(file) {
+            Ok(tags) => Some(tags.unwrap_or_default()),
+            Err(error) => {
+                let _ = self.events.send_blocking(Event::TagWarning(error));
+                None
+            }
+        }
+    }
+    fn record_directory(&mut self, file: &gio::File) {
+        match stamp(file, false) {
+            Ok(expected) => self.inverses.push(Step::Remove {
+                file: file.clone(),
+                expected,
+                redo: Box::new(Step::CreateDirectory(file.clone())),
+            }),
+            Err(_) => {
+                self.irreversible = true;
+                self.unrecordable = true;
+            }
+        }
+    }
+
+    fn record_move(&mut self, source: &gio::File, target: &gio::File) {
+        match stamp(source, true) {
+            Ok(expected) => self.inverses.push(Step::Move {
+                source: source.clone(),
+                target: target.clone(),
+                expected,
+            }),
+            Err(_) => {
+                self.irreversible = true;
+                self.unrecordable = true;
+            }
+        }
+    }
+
+    fn record_copy(&mut self, source: &gio::File, target: &gio::File) {
+        match (stamp(target, false), stamp(source, true)) {
+            (Ok(expected), Ok(original)) => self.inverses.push(Step::Remove {
+                file: target.clone(),
+                expected,
+                redo: Box::new(Step::Copy {
+                    source: source.clone(),
+                    target: target.clone(),
+                    expected: original,
+                }),
+            }),
+            _ => {
+                self.irreversible = true;
+                self.unrecordable = true;
+            }
+        }
+    }
+
+    fn trash(&mut self, file: &gio::File) -> Result<()> {
+        let root = gio::File::for_uri("trash:///");
+        let list = || -> std::result::Result<Vec<gio::File>, glib::Error> {
+            let entries = root.enumerate_children(
+                "standard::name",
+                gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
+                gio::Cancellable::NONE,
+            )?;
+            let mut result = Vec::new();
+            while let Some(info) = entries.next_file(gio::Cancellable::NONE)? {
+                result.push(root.child(info.name()));
+            }
+            Ok(result)
+        };
+        let before = list().ok();
+        let original = stamp(file, true).ok();
+        file.trash(Some(&self.cancel)).map_err(error)?;
+        let target = before
+            .and_then(|before| list().ok().map(|after| (before, after)))
+            .and_then(|(before, after)| {
+                let matches: Vec<_> = after
+                    .into_iter()
+                    .filter(|entry| !before.iter().any(|old| old.equal(entry)))
+                    .filter(|entry| {
+                        let path = entry
+                            .query_info(
+                                "trash::orig-path",
+                                gio::FileQueryInfoFlags::NOFOLLOW_SYMLINKS,
+                                gio::Cancellable::NONE,
+                            )
+                            .ok()
+                            .and_then(|info| info.attribute_file_path("trash::orig-path"));
+                        path == file.path()
+                            && original
+                                .as_ref()
+                                .is_some_and(|old| stamp(entry, true).as_ref().ok() == Some(old))
+                    })
+                    .collect();
+                if matches.len() == 1 {
+                    matches.into_iter().next()
+                } else {
+                    None
+                }
+            });
+        if let Some(target) = target {
+            self.record_move(&target, file);
+            self.changed(file, Some(&target), true);
+        } else {
+            self.irreversible = true;
+            self.unrecordable = true;
+            // Retain catalog assignments when the precise Trash entry is unknown.
+        }
+        self.done(file);
+        Ok(())
+    }
+
+    fn replay(&mut self, step: &Step) -> Result<()> {
+        self.check()?;
+        match step {
+            Step::Move {
+                source,
+                target,
+                expected,
+            } => {
+                verify(source, expected, true)?;
+                if optional_info(target, &self.cancel)?.is_some() {
+                    return Err(tr("The destination already exists. Undo/Redo was stopped.").into());
+                }
+                if crate::files::is_trash(source) {
+                    source
+                        .move_(
+                            target,
+                            gio::FileCopyFlags::NO_FALLBACK_FOR_MOVE,
+                            Some(&self.cancel),
+                            None,
+                        )
+                        .map_err(error)?;
+                    if let Ok(expected) = stamp(target, true) {
+                        self.inverses.push(Step::Trash {
+                            file: target.clone(),
+                            expected,
+                        });
+                    } else {
+                        self.irreversible = true;
+                        self.unrecordable = true;
+                    }
+                    self.changed(source, Some(target), true);
+                } else {
+                    self.copy_tree(source, target, true, 0)?;
+                }
+            }
+            Step::Remove {
+                file,
+                expected,
+                redo,
+            } => {
+                verify(file, expected, false)?;
+                file.delete(Some(&self.cancel)).map_err(error)?;
+                self.inverses.push(*redo.clone());
+                self.changed(file, None, true);
+            }
+            Step::Copy {
+                source,
+                target,
+                expected,
+            } => {
+                verify(source, expected, true)?;
+                if optional_info(target, &self.cancel)?.is_some() {
+                    return Err(tr("The destination already exists. Undo/Redo was stopped.").into());
+                }
+                self.copy_tree(source, target, false, 0)?;
+            }
+            Step::CreateDirectory(file) => {
+                file.make_directory(Some(&self.cancel)).map_err(error)?;
+                self.record_directory(file);
+            }
+            Step::Trash { file, expected } => {
+                verify(file, expected, true)?;
+                self.trash(file)?;
+            }
+        }
+        self.done(&gio::File::for_path("/"));
+        Ok(())
+    }
+
     fn check(&self) -> Result<()> {
         if self.cancel.is_cancelled() {
             Err(tr("Operation cancelled.").into())
@@ -266,6 +487,9 @@ impl Context {
     }
 
     fn failed(&self, operation: Operation, file: &gio::File, message: &OperationError) {
+        if matches!(operation, Operation::Replay { .. }) {
+            return;
+        }
         let error = if let OperationError::Gio(error) = message {
             crate::errors::AppError::gio(&operation.title(), file, error)
         } else {
@@ -318,6 +542,7 @@ impl Context {
         let Some((target, merge, replace)) = self.resolve(source, target, directory)? else {
             return Ok(false);
         };
+        let tags = self.read_tags(source);
         self.progress(source, None, depth == 0);
         // Atomic rename on the same filesystem; explicitly disallow the GIO fallback
         // because recursive cross-filesystem moves must preserve unprocessed sources.
@@ -334,6 +559,11 @@ impl Context {
                 None,
             ) {
                 Ok(()) => {
+                    if replace {
+                        self.irreversible = true;
+                    }
+                    self.record_move(&target, source);
+                    self.send_tags(source, &target, tags);
                     self.changed(source, Some(&target), true);
                     self.completed_targets
                         .push((source.uri().to_string(), target.uri().to_string()));
@@ -350,6 +580,7 @@ impl Context {
         if directory {
             if !merge {
                 target.make_directory(Some(&self.cancel)).map_err(error)?;
+                self.record_directory(&target);
             }
             let enumerator = source
                 .enumerate_children(
@@ -388,6 +619,10 @@ impl Context {
             }
             if moving && complete {
                 source.delete(Some(&self.cancel)).map_err(error)?;
+                self.inverses.push(Step::CreateDirectory(source.clone()));
+            }
+            if !merge || complete {
+                self.send_tags(source, &target, tags);
             }
             // Children already emitted their own changes, including partial merges.
             if complete {
@@ -399,9 +634,16 @@ impl Context {
             Ok(complete)
         } else {
             self.copy_leaf(source, &target, replace)?;
+            if replace {
+                self.irreversible = true;
+            }
+            self.record_copy(source, &target);
+            self.send_tags(source, &target, tags);
             self.changed(source, Some(&target), false);
             if moving {
                 source.delete(Some(&self.cancel)).map_err(error)?;
+                self.inverses.pop();
+                self.record_move(&target, source);
             }
             if moving {
                 self.changed(source, Some(&target), true);
@@ -486,6 +728,7 @@ impl Context {
         }
         self.progress(file, None, false);
         file.delete(Some(&self.cancel)).map_err(error)?;
+        self.irreversible = true;
         self.changed(file, None, true);
         self.done(file);
         Ok(())
@@ -654,19 +897,33 @@ fn execute(job: Job) {
         last_progress: Instant::now(),
         completed_targets: skip_targets.clone(),
         skip_targets,
+        inverses: Vec::new(),
+        fallback_tags: job.fallback_tags,
+        irreversible: false,
+        unrecordable: false,
     };
+    let mut remaining = Vec::new();
     let original = operation.clone();
     let result = (|| -> Result<()> {
         ctx.check()?;
         let deleting = matches!(&operation, Operation::Delete(_));
         match operation {
+            Operation::Replay { steps, .. } => {
+                let mut pending = steps;
+                while let Some(step) = pending.pop() {
+                    if let Err(e) = ctx.check().and_then(|()| ctx.replay(&step)) {
+                        pending.push(step);
+                        remaining = pending;
+                        return Err(e);
+                    }
+                }
+            }
             Operation::Retry { .. } => unreachable!("retry unwrapped"),
             Operation::Create(parent, name) => {
                 validate_name(&name)?;
-                parent
-                    .child(name)
-                    .make_directory(Some(&ctx.cancel))
-                    .map_err(error)?;
+                let target = parent.child(name);
+                target.make_directory(Some(&ctx.cancel)).map_err(error)?;
+                ctx.record_directory(&target);
                 ctx.done(&parent);
             }
             Operation::Rename(file, name) => {
@@ -681,6 +938,7 @@ fn execute(job: Job) {
                 let target = file
                     .set_display_name(&name, Some(&ctx.cancel))
                     .map_err(error)?;
+                ctx.record_move(&target, &file);
                 ctx.changed(&file, Some(&target), true);
                 ctx.done(&file);
             }
@@ -758,6 +1016,15 @@ fn execute(job: Job) {
                                 None,
                             )
                             .map_err(error)?;
+                        if let Ok(expected) = stamp(&target, true) {
+                            ctx.inverses.push(Step::Trash {
+                                file: target.clone(),
+                                expected,
+                            });
+                        } else {
+                            ctx.irreversible = true;
+                            ctx.unrecordable = true;
+                        }
                         ctx.changed(&source, Some(&target), true);
                         ctx.done(&source);
                         Ok(())
@@ -786,6 +1053,7 @@ fn execute(job: Job) {
                         ctx.failed(Operation::DeleteTrash(vec![source.clone()]), &source, &e);
                         ctx.errors.push(format!("{}: {e}", source.parse_name()));
                     } else {
+                        ctx.irreversible = true;
                         ctx.changed(&source, None, true);
                         ctx.done(&source);
                     }
@@ -797,10 +1065,7 @@ fn execute(job: Job) {
                     let result = if deleting {
                         ctx.delete_tree(&file, 0)
                     } else {
-                        file.trash(Some(&ctx.cancel)).map_err(error).map(|_| {
-                            ctx.changed(&file, None, true);
-                            ctx.done(&file);
-                        })
+                        ctx.trash(&file)
                     };
                     if let Err(e) = result {
                         ctx.check()?;
@@ -823,6 +1088,7 @@ fn execute(job: Job) {
     if let Err(e) = result {
         if !ctx.cancel.is_cancelled() {
             let file = match &original {
+                Operation::Replay { .. } => gio::File::for_path("/"),
                 Operation::Retry { .. } => unreachable!("retry unwrapped"),
                 Operation::Create(f, _) | Operation::Rename(f, _) => f.clone(),
                 Operation::Copy { destination, .. } => destination.clone(),
@@ -837,6 +1103,14 @@ fn execute(job: Job) {
             ctx.failed(original, &file, &e);
             ctx.errors.push(e.to_string());
         }
+    }
+    if !ctx.inverses.is_empty() || !remaining.is_empty() || ctx.irreversible {
+        let _ = ctx.events.send_blocking(Event::History {
+            steps: ctx.inverses,
+            remaining,
+            irreversible: ctx.irreversible,
+            unrecordable: ctx.unrecordable,
+        });
     }
     let _ = ctx.events.send_blocking(Event::Finished {
         completed: ctx.completed,
@@ -856,6 +1130,7 @@ mod tests {
         let cancel = gio::Cancellable::new();
         std::thread::spawn(move || {
             execute(Job {
+                fallback_tags: Default::default(),
                 operation,
                 cancel,
                 events: tx,
@@ -1020,6 +1295,7 @@ mod tests {
         cancel.cancel();
         let (tx, rx) = async_channel::unbounded();
         execute(Job {
+            fallback_tags: Default::default(),
             operation: Operation::Create(gio::File::for_path(temp.path()), "never-created".into()),
             cancel,
             events: tx,
@@ -1050,6 +1326,7 @@ mod tests {
         let operation = copy(&source, &dst, true);
         std::thread::spawn(move || {
             execute(Job {
+                fallback_tags: Default::default(),
                 operation,
                 cancel,
                 events: tx,
@@ -1228,3 +1505,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "operation_history_tests.rs"]
+mod history_tests;

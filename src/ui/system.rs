@@ -702,13 +702,61 @@ impl Browser {
         let catalog = self.catalog.clone();
         let weak = Rc::downgrade(self);
         let weak_pane = Rc::downgrade(pane);
-        glib::MainContext::default().spawn_local(async move{
-            if let Err(e)=catalog.observe(identities).await{if let Some(b)=weak.upgrade(){b.report_catalog_error(&e);}return;}
-            let Some(pane)=weak_pane.upgrade()else{return;};let objects:Vec<_>=(0..pane.model.store.n_items()).filter_map(|i|pane.model.store.item(i)).collect();
-            let uris:Vec<String>=objects.iter().map(|o|item(o).file.uri().to_string()).collect();
-            let badges=catalog.call(move|db|{let mut rows=db.prepare("SELECT t.name,t.color FROM tags t JOIN links l ON t.id=l.tag JOIN objects o ON o.id=l.object WHERE o.uri=?1 ORDER BY t.id")?;let mut result=Vec::new();for uri in uris{let tags=rows.query_map([&uri],|r|Ok((r.get::<_,String>(0)?,r.get::<_,String>(1)?)))?.collect::<rusqlite::Result<Vec<_>>>()?;result.push(tags);}Ok(result)}).await;
-            if let Ok(badges)=badges {let selected:HashSet<_>=pane.selected().iter().map(|f|f.file.uri().to_string()).collect();let old=pane.restoring.replace(true);let mut changed=false;for (object,tags) in objects.iter().zip(badges){let mut file=object.downcast_ref::<glib::BoxedAnyObject>().unwrap().borrow_mut::<FileItem>();if file.tags!=tags{file.tags=tags;changed=true;}}
-                if changed {pane.model.store.items_changed(0,pane.model.store.n_items(),pane.model.store.n_items());for i in 0..pane.selection.n_items(){if selected.contains(pane.selection.item(i).map(|o|item(&o).file.uri().to_string()).as_deref().unwrap_or("")){pane.selection.select_item(i,false);}}}pane.restoring.set(old);
+        glib::MainContext::default().spawn_local(async move {
+            if let Err(e) = catalog.observe(identities).await {
+                if let Some(b) = weak.upgrade() {
+                    b.report_catalog_error(&e);
+                }
+                return;
+            }
+            let Some(pane) = weak_pane.upgrade() else {
+                return;
+            };
+            let objects: Vec<_> = (0..pane.model.store.n_items())
+                .filter_map(|i| pane.model.store.item(i))
+                .collect();
+            let uris: Vec<String> = objects
+                .iter()
+                .map(|o| item(o).file.uri().to_string())
+                .collect();
+            let badges = catalog.badges(uris).await;
+            if let Ok(badges) = badges {
+                let selected: HashSet<_> = pane
+                    .selected()
+                    .iter()
+                    .map(|f| f.file.uri().to_string())
+                    .collect();
+                let old = pane.restoring.replace(true);
+                let mut changed = false;
+                for (object, tags) in objects.iter().zip(badges) {
+                    let mut file = object
+                        .downcast_ref::<glib::BoxedAnyObject>()
+                        .unwrap()
+                        .borrow_mut::<FileItem>();
+                    if file.tags != tags {
+                        file.tags = tags;
+                        changed = true;
+                    }
+                }
+                if changed {
+                    pane.model.store.items_changed(
+                        0,
+                        pane.model.store.n_items(),
+                        pane.model.store.n_items(),
+                    );
+                    for i in 0..pane.selection.n_items() {
+                        if selected.contains(
+                            pane.selection
+                                .item(i)
+                                .map(|o| item(&o).file.uri().to_string())
+                                .as_deref()
+                                .unwrap_or(""),
+                        ) {
+                            pane.selection.select_item(i, false);
+                        }
+                    }
+                }
+                pane.restoring.set(old);
             }
         });
     }
@@ -759,13 +807,14 @@ impl Browser {
                     let weak = weak.clone();
                     glib::MainContext::default().spawn_local(async move {
                         if let Some(b) = weak.upgrade() {
-                            if let Err(e) = b.catalog.assign(files, vec![tag.id], enabled).await {
-                                b.error(&e);
-                            }
-                            b.refresh_tag_views();
-                            for pane in b.all_panes() {
-                                b.decorate(&pane);
-                            }
+                            b.edit_tags(
+                                tr("Change Tags"),
+                                crate::catalog::Edit::Assign {
+                                    files,
+                                    tags: vec![tag.id],
+                                    enabled,
+                                },
+                            );
                         }
                     });
                 });
@@ -834,18 +883,17 @@ impl Browser {
                     let d = d.clone();
                     glib::MainContext::default().spawn_local(async move {
                         if let Some(b) = weak.upgrade() {
-                            match b.catalog.save_tag(id, name, color).await {
-                                Ok(()) => {
-                                    if let Some(d) = d.upgrade() {
-                                        d.force_close();
+                            b.edit_tags_complete(
+                                tr("Edit Tag"),
+                                crate::catalog::Edit::Save { id, name, color },
+                                move |success| {
+                                    if success {
+                                        if let Some(d) = d.upgrade() {
+                                            d.force_close();
+                                        }
                                     }
-                                    b.refresh_tags();
-                                    for p in b.all_panes() {
-                                        b.decorate(&p);
-                                    }
-                                }
-                                Err(e) => b.error(&e),
-                            }
+                                },
+                            );
                         }
                     });
                 });
@@ -859,17 +907,17 @@ impl Browser {
                         let d = d.clone();
                         glib::MainContext::default().spawn_local(async move {
                             if let Some(b) = weak.upgrade() {
-                                if let Err(e) = b.catalog.delete_tag(tag.id).await {
-                                    b.error(&e);
-                                } else {
-                                    if let Some(d) = d.upgrade() {
-                                        d.force_close();
-                                    }
-                                    b.refresh_tags();
-                                    for p in b.all_panes() {
-                                        b.decorate(&p);
-                                    }
-                                }
+                                b.edit_tags_complete(
+                                    tr("Delete Tag"),
+                                    crate::catalog::Edit::Delete(tag.id),
+                                    move |success| {
+                                        if success {
+                                            if let Some(d) = d.upgrade() {
+                                                d.force_close();
+                                            }
+                                        }
+                                    },
+                                );
                             }
                         });
                     });
@@ -978,8 +1026,16 @@ impl Browser {
                     return;
                 }
             }
+            let fallback_tags = match b.catalog.fallback_tags().await {
+                Ok(tags) => tags,
+                Err(error) => {
+                    b.report_catalog_error(&error);
+                    Default::default()
+                }
+            };
             if b.worker
                 .send(Job {
+                    fallback_tags,
                     operation,
                     cancel,
                     events: events.clone(),

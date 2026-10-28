@@ -81,7 +81,7 @@ impl Browser {
             match snapshot {
                 Ok(files) if !files.is_empty() => {
                     let dialog = adw::AlertDialog::builder().heading(tr("Empty Trash?"))
-                        .body(tr("Permanently delete all {count} items in Trash? This cannot be undone.").replace("{count}", &files.len().to_string())).build();
+                        .body(tr("Permanently delete all {count} items in Trash? This cannot be undone and clears Undo/Redo history.").replace("{count}", &files.len().to_string())).build();
                     dialog.add_responses(&[("cancel", &tr("Cancel")), ("empty", &tr("Empty Trash"))]);
                     dialog.set_response_appearance("empty", adw::ResponseAppearance::Destructive);
                     dialog.set_default_response(Some("cancel"));

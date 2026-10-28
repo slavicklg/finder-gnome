@@ -43,7 +43,7 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - name: Move between filesystems
-        run: cargo test --locked cross_filesystem_move -- --ignored --nocapture
+        run: cargo test --locked cross_filesystem -- --ignored --nocapture
       - name: GTK acceptance
         env:
           FINDER_GNOME_GUI_DIAGNOSTICS: ${{ runner.temp }}/finder-gnome-gui

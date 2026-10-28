@@ -7,6 +7,7 @@ mod drag_drop;
 mod file_commands;
 mod system;
 mod trash;
+mod undo;
 use std::{
     cell::{Cell, RefCell},
     collections::{HashMap, HashSet},
@@ -79,6 +80,9 @@ pub struct Browser {
     connections: Rc<crate::connections::Connections>,
     catalog: crate::catalog::Catalog,
     catalog_error_shown: Cell<bool>,
+    undo_history: RefCell<undo::UndoHistory>,
+    undo_menu: gio::Menu,
+    local_tags_notice: Cell<bool>,
     locations_box: gtk::Box,
     tags_box: gtk::Box,
     volumes: gio::VolumeMonitor,
@@ -183,11 +187,19 @@ impl Browser {
             "New Tab",
             "win.new-tab",
         )));
+        let undo_menu = gio::Menu::new();
         let header = adw::HeaderBar::new();
         header.add_css_class("toolbar");
         header.pack_start(&icon_button("go-previous-symbolic", "Back", "win.back"));
         header.pack_start(&icon_button("go-next-symbolic", "Forward", "win.forward"));
         header.pack_start(&icon_button("go-up-symbolic", "Parent Folder", "win.up"));
+
+        let history_buttons = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        history_buttons.add_css_class("linked");
+        history_buttons.set_margin_start(6);
+        history_buttons.append(&icon_button("edit-undo-symbolic", "Undo", "win.undo"));
+        history_buttons.append(&icon_button("edit-redo-symbolic", "Redo", "win.redo"));
+        header.pack_start(&history_buttons);
 
         let title = gtk::Label::builder()
             .ellipsize(gtk::pango::EllipsizeMode::Middle)
@@ -226,7 +238,7 @@ impl Browser {
         header.pack_end(
             &gtk::MenuButton::builder()
                 .icon_name("open-menu-symbolic")
-                .menu_model(&main_menu())
+                .menu_model(&main_menu(&undo_menu))
                 .tooltip_text(tr("Actions"))
                 .build(),
         );
@@ -411,6 +423,9 @@ impl Browser {
             connections: Rc::new(crate::connections::Connections::default()),
             catalog,
             catalog_error_shown: Cell::new(false),
+            undo_history: RefCell::new(undo::UndoHistory::default()),
+            undo_menu: undo_menu.clone(),
+            local_tags_notice: Cell::new(false),
             locations_box,
             tags_box,
             volumes: gio::VolumeMonitor::get(),
@@ -984,7 +999,7 @@ impl Browser {
             let Some(browser) = weak.upgrade() else {
                 return glib::Propagation::Proceed;
             };
-            if browser.jobs.borrow().is_empty() {
+            if !browser.undo_history.borrow().busy {
                 browser.persist_now();
                 browser.storage.flush();
                 return glib::Propagation::Proceed;
@@ -1274,6 +1289,11 @@ impl Browser {
     }
 
     fn install_actions(self: &Rc<Self>, app: &adw::Application) {
+        self.action(app, "undo", &["<Control>z"], |b| b.undo(false));
+        self.action(app, "redo", &["<Control><Shift>z", "<Control>y"], |b| {
+            b.undo(true)
+        });
+        self.update_undo_actions();
         self.action(app, "quick-look", &["space"], |b| {
             if !b.text_focused() {
                 b.toggle_quick_look();
@@ -1800,6 +1820,9 @@ impl Browser {
                 )
             });
             for (name, action) in self.actions.borrow().iter() {
+                if name == "undo" || name == "redo" {
+                    continue;
+                }
                 action.set_enabled(match name.as_str() {
                     "up" | "reload" | "about" | "new-tab" | "duplicate-tab" | "close-tab"
                     | "preferences" | "search" | "connect-server" | "manage-tags" => true,
@@ -1839,6 +1862,9 @@ impl Browser {
         }
         self.status.set_label(&message);
         for (name, action) in self.actions.borrow().iter() {
+            if name == "undo" || name == "redo" {
+                continue;
+            }
             let enabled = match name.as_str() {
                 "back" => self.history.borrow().can_back(),
                 "forward" => self.history.borrow().can_forward(),
@@ -2874,8 +2900,8 @@ impl Browser {
         let dialog = adw::AlertDialog::builder()
             .heading(tr("Delete permanently?"))
             .body(count(
-                "{count} item will be permanently deleted. This cannot be undone.",
-                "{count} items will be permanently deleted. This cannot be undone.",
+                "{count} item will be permanently deleted. This cannot be undone and clears Undo/Redo history.",
+                "{count} items will be permanently deleted. This cannot be undone and clears Undo/Redo history.",
                 files.len() as u32,
             ))
             .build();
@@ -2917,8 +2943,26 @@ impl Browser {
         self: &Rc<Self>,
         operation: Operation,
         clear_clipboard: Option<(gdk::Clipboard, gdk::ContentProvider)>,
+        drop_completion: Option<crate::dnd::Completion>,
+    ) {
+        self.serialize(move |browser| {
+            browser.enqueue_complete_now(operation, clear_clipboard, drop_completion)
+        });
+    }
+
+    fn enqueue_complete_now(
+        self: &Rc<Self>,
+        operation: Operation,
+        clear_clipboard: Option<(gdk::Clipboard, gdk::ContentProvider)>,
         mut drop_completion: Option<crate::dnd::Completion>,
     ) {
+        let operation_title = operation.title();
+        let mut history_received = false;
+        let replay_steps = if let Operation::Replay { steps, .. } = &operation {
+            steps.clone()
+        } else {
+            Vec::new()
+        };
         let cancel = gio::Cancellable::new();
         let (tx, rx) = async_channel::unbounded();
         let task = self.add_task(&operation, &cancel);
@@ -2938,22 +2982,43 @@ impl Browser {
                     break;
                 };
                 match event {
+                    Event::FileTags {
+                        source,
+                        target,
+                        tags,
+                    } => {
+                        if let Err(error) =
+                            browser.catalog.import_file_tags(source, target, tags).await
+                        {
+                            browser.report_catalog_error(&error);
+                        }
+                    }
+                    Event::TagWarning(error) => browser.report_catalog_error(&error),
+                    Event::History {
+                        steps,
+                        remaining,
+                        irreversible,
+                        unrecordable,
+                    } => {
+                        history_received = true;
+                        browser.record_file_history(
+                            operation_title.clone(),
+                            steps,
+                            remaining,
+                            irreversible,
+                            unrecordable,
+                        );
+                    }
                     Event::Changed {
                         source,
                         target,
                         moving,
                     } => {
-                        let catalog = browser.catalog.clone();
-                        let weak = Rc::downgrade(&browser);
-                        glib::MainContext::default().spawn_local(async move {
-                            if let Err(e) = catalog.changed(source, target, moving).await {
-                                if let Some(b) = weak.upgrade() {
-                                    b.report_catalog_error(&e);
-                                }
-                            } else if let Some(b) = weak.upgrade() {
-                                b.refresh_tag_views();
-                            }
-                        });
+                        if let Err(e) = browser.catalog.changed(source, target, moving).await {
+                            browser.report_catalog_error(&e);
+                        } else {
+                            browser.refresh_tag_views();
+                        }
                     }
                     Event::Failed { operation, error } => {
                         if error.kind == crate::errors::ErrorKind::Offline {
@@ -3054,9 +3119,17 @@ impl Browser {
                         for pane in browser.panes.borrow().iter() {
                             pane.model.reload();
                         }
-                        if browser.closing.get() && browser.jobs.borrow().is_empty() {
-                            browser.window.close();
+                        if !history_received && !replay_steps.is_empty() {
+                            browser.record_file_history(
+                                operation_title.clone(),
+                                Vec::new(),
+                                replay_steps.clone(),
+                                false,
+                                false,
+                            );
                         }
+                        browser.notify_local_tags().await;
+                        browser.finish_serial();
                         break;
                     }
                 }
@@ -3068,7 +3141,7 @@ impl Browser {
         let dialog = adw::AlertDialog::builder()
             .heading(tr("An item with this name already exists"))
             .body(
-                tr("Source: {source}\nDestination: {destination}")
+                tr("Source: {source}\nDestination: {destination}\nReplacing a file cannot be undone and clears Undo/Redo history.")
                     .replace("{source}", &conflict.source)
                     .replace("{destination}", &conflict.destination),
             )
@@ -3140,6 +3213,7 @@ impl Browser {
         }
     }
     fn cancel_all(&self) {
+        self.undo_history.borrow_mut().clear_pending();
         for cancel in self.jobs.borrow().iter() {
             self.cancel_job(cancel);
         }
@@ -3258,7 +3332,7 @@ impl Pane {
             let model = if files::is_trash(&self.model.file) {
                 trash::menu()
             } else {
-                file_menu()
+                file_menu(None)
             };
             let popover = gtk::PopoverMenu::from_model(Some(&model));
             popover.set_has_arrow(false);
@@ -3397,8 +3471,16 @@ fn detail_factory(field: usize) -> gtk::SignalListItemFactory {
     factory
 }
 
-fn file_menu() -> gio::Menu {
+fn file_menu(history: Option<&gio::Menu>) -> gio::Menu {
     let menu = gio::Menu::new();
+    if let Some(history) = history {
+        menu.append_section(None, history);
+    } else {
+        let history = gio::Menu::new();
+        history.append(Some(&tr("Undo")), Some("win.undo"));
+        history.append(Some(&tr("Redo")), Some("win.redo"));
+        menu.append_section(None, &history);
+    }
     let open = gio::Menu::new();
     open.append(Some(&tr("Open")), Some("win.open"));
     open.append(Some(&tr("Open With…")), Some("win.open-with"));
@@ -3447,8 +3529,8 @@ fn file_menu() -> gio::Menu {
     menu
 }
 
-fn main_menu() -> gio::Menu {
-    let menu = file_menu();
+fn main_menu(history: &gio::Menu) -> gio::Menu {
+    let menu = file_menu(Some(history));
     let view = gio::Menu::new();
     view.append(Some(&tr("Connect to Server…")), Some("win.connect-server"));
     view.append(Some(&tr("Search…")), Some("win.search"));
@@ -3475,6 +3557,7 @@ mod tests {
     include!("ui/stage2_tests.rs");
     include!("ui/stage3_tests.rs");
     include!("ui/trash_tests.rs");
+    include!("ui/undo_tests.rs");
     use std::{
         fs,
         time::{Duration, Instant},
@@ -3881,6 +3964,7 @@ mod tests {
         context_menu_acceptance(&browser);
         stage2_acceptance(&browser);
         stage3_acceptance(&browser);
+        undo_acceptance(&browser);
         browser.window.destroy();
     }
 }

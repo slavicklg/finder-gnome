@@ -9,10 +9,12 @@ mod dnd;
 mod errors;
 mod files;
 mod i18n;
+mod operation_history;
 mod operations;
 mod preview;
 mod properties;
 mod state;
+mod tag_storage;
 mod ui;
 
 use adw::prelude::*;

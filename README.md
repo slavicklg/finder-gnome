@@ -249,6 +249,7 @@ remain available.
 | Ctrl+L / Alt+Up / F5 | Location / Parent / Reload |
 | Ctrl+H / Ctrl+A | Show hidden / Select all |
 | Ctrl+C / Ctrl+X / Ctrl+V | Copy / Cut / Paste |
+| Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y) | Undo / Redo |
 | Ctrl+Shift+N / F2 | New folder / Rename |
 | Enter | Open |
 | Delete / Shift+Delete | Trash / Delete permanently |
@@ -311,16 +312,28 @@ follow directory symlinks or cross native filesystem boundaries. It stops at
 reported. Content search and indexing are outside this stage.
 
 Use **Tags…** in the context menu to assign multiple tags and **Manage Tags**
-to create, rename, recolor or delete tags. Sidebar collections include missing or
-offline tagged files so a disconnected device does not erase assignments. Tags
-are application metadata stored in
+to create, rename, recolor or delete tags. Deleting a tag leaves files intact.
+On supported local files and folders, assignments are stored in the
+`user.finder-gnome.tags` extended attribute as versioned JSON with tag UUIDs,
+names and colors. Hard links share these attributes; symbolic links use local
+storage without changing their targets.
+
+SQLite remains the tag registry, collection index and fallback at
 `$XDG_DATA_HOME/ubuntu-finder/catalog.sqlite` (normally
-`~/.local/share/ubuntu-finder/catalog.sqlite`); deleting a tag leaves files intact.
+`~/.local/share/ubuntu-finder/catalog.sqlite`). Existing assignments are migrated
+when files are encountered. Unsupported filesystems, network locations and
+unwritable attributes retain their assignments locally, with a notice.
+Malformed or newer-version attributes are preserved and reported.
+
 App copies inherit tags; moves and renames preserve them, including completed
 parts of interrupted transfers. Replacing a target replaces its tag assignments
-with the source's. External moves are reconciled when observed, using file
-identity where available; moves while the app is closed or across filesystems
-cannot always be recognized. Tags are not written to filesystem xattrs.
+with the source's. External moves within a filesystem preserve xattrs; moves
+between filesystems and copies preserve them only when the other program and
+destination support it. Files are indexed at their new location when encountered;
+there is no whole-disk search for moved files. Sidebar collections retain offline
+entries. Renaming, recoloring or deleting a tag updates available files immediately
+and retries unavailable files when encountered. A different computer may see the
+old metadata until those files have been updated.
 
 ## Trash
 
@@ -390,7 +403,21 @@ use the same background operation queue and conflict dialogs as Paste.
 
 ## Operation semantics
 
-Cancellation keeps completed changes; it is not Undo. A copy writes a temporary
+**Undo/Redo** in the Actions menu applies to file operations and tag changes.
+The most recent 100 actions are shared by all tabs and panes until the window
+closes. Creation, copy, move, rename, Trash, Restore, tag assignment and tag
+management are reversible. A new change discards Redo. Text fields retain their
+own editing history. Undo/Redo is disabled while queued changes are running.
+
+Partial operations record only completed changes. Undo checks the affected
+objects and stops if they have changed or a destination is occupied; new files
+inside a created folder are never recursively removed. A failed Undo can be
+retried after resolving the conflict. Replacement, permanent deletion and Empty
+Trash cannot be undone and clear operation history after a successful mutation.
+If a backend cannot identify the exact Trash entry, the operation is completed
+with a notice that its history could not be retained.
+
+Cancellation keeps completed changes, which remain available to Undo. A copy writes a temporary
 sibling and commits it only when complete, so a cancelled copy does not truncate
 an existing destination. A cross-filesystem move copies before removing each
 successfully copied source. Skipped or failed children stay at the source. Symbolic
@@ -457,7 +484,7 @@ See [localization](po/README.md) for translation tooling.
 ## Stage boundaries
 
 Stages 1–3 include local and GVfs files, device management, filename search,
-application tags and background task handling. Undo and large-directory performance work remain outside the current implementation. Executables are not launched automatically.
+application tags, Undo/Redo and background task handling. Large-directory performance work remains outside the current implementation. Executables are not launched automatically.
 Hard-link relationships, filesystem-specific metadata and crash recovery are not
 preserved as a backup tool would preserve them. Debian packaging is implemented;
 registering as the default file manager and performance work remain for stage 4.

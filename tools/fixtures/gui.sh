@@ -24,7 +24,7 @@ gui_environment=(env
     "XDG_CONFIG_HOME=$gui_work/config" "XDG_DATA_HOME=$gui_work/data"
     "XDG_CACHE_HOME=$gui_work/cache" "XDG_STATE_HOME=$gui_work/state"
     "XDG_RUNTIME_DIR=$gui_work/runtime" RUST_BACKTRACE=full
-    GTK_A11Y=none GIO_USE_VFS=local GSETTINGS_BACKEND=memory GSK_RENDERER=cairo
+    GTK_A11Y=none "GIO_USE_VFS=${FINDER_GNOME_GUI_VFS:-local}" GSETTINGS_BACKEND=memory GSK_RENDERER=cairo
     GDK_BACKEND=x11 FINDER_GNOME_NATIVE_DND=1)
 
 {
@@ -41,7 +41,7 @@ gui_environment=(env
 set +e
 "${gui_environment[@]}" timeout --signal=TERM --kill-after=10s 180s \
     xvfb-run -a -s '-screen 0 1024x768x24' dbus-run-session -- \
-    cargo test --locked gui_acceptance -- --ignored --nocapture \
+    cargo test --locked "${1:-gui_acceptance}" -- --ignored --nocapture \
     2>&1 | tee "$gui_diagnostics/test.log"
 gui_status=${PIPESTATUS[0]}
 set -e

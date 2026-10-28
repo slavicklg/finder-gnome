@@ -33,6 +33,17 @@ fn trash_acceptance() {
     ]));
     until(|| browser.jobs.borrow().is_empty());
     assert!(!temp.path().join("restore.txt").exists());
+    assert!(browser.window.lookup_action("undo").unwrap().is_enabled());
+    browser.focus_active();
+    action(&browser, "undo");
+    until(|| !browser.undo_history.borrow().busy);
+    assert!(temp.path().join("restore.txt").exists());
+    assert!(temp.path().join("Folder/Nested/data").exists());
+    action(&browser, "redo");
+    until(|| !browser.undo_history.borrow().busy);
+    assert!(!temp.path().join("restore.txt").exists());
+    assert!(!temp.path().join("Folder").exists());
+
     let trash_row = browser
         .places
         .borrow()
