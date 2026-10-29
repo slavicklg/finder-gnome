@@ -1,6 +1,28 @@
 // SPDX-FileCopyrightText: 2026 Slavick
 // SPDX-License-Identifier: MIT
 
+fn stage3_dialog_details(browser: &Browser) -> Option<String> {
+    fn first_label(widget: &gtk::Widget) -> Option<String> {
+        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+            return Some(label.text().to_string());
+        }
+        let mut child = widget.first_child();
+        while let Some(widget) = child {
+            if let Some(text) = first_label(&widget) {
+                return Some(text);
+            }
+            child = widget.next_sibling();
+        }
+        None
+    }
+    let dialog = browser
+        .window
+        .visible_dialog()?
+        .downcast::<adw::AlertDialog>()
+        .ok()?;
+    first_label(&dialog.extra_child()?)
+}
+
 fn stage3_acceptance(browser: &Rc<Browser>) {
     fn value<T: 'static>(future: impl std::future::Future<Output = T> + 'static) -> T {
         let result = Rc::new(RefCell::new(None));
@@ -91,7 +113,7 @@ fn stage3_acceptance(browser: &Rc<Browser>) {
     let frame = Instant::now();
     until(|| frame.elapsed() > Duration::from_millis(350));
     browser.enqueue(Operation::Rename(file.clone(), "renamed.txt".into()));
-    until(|| browser.jobs.borrow().is_empty());
+    until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
     let catalog = browser.catalog.clone();
     let uri = root.child("renamed.txt").uri().to_string();
     assert_eq!(
@@ -144,20 +166,74 @@ fn stage3_acceptance(browser: &Rc<Browser>) {
     until(|| browser.window.visible_dialog().is_some());
     close_dialog(browser);
     fs::write(temp.path().join("Nested/renamed.txt"), "keep destination").unwrap();
+    // gone.txt deliberately has pending local tags. Completion of this copy
+    // reports that fallback even when the copy itself is cancelled.
+    let catalog = browser.catalog.clone();
+    let expect_local_notice = !browser.local_tags_notice.get()
+        && value(async move { catalog.pending_count().await }).unwrap() > 0;
+    let task_count = browser.task_rows.borrow().len();
     browser.enqueue(Operation::Copy {
         sources: vec![root.child("renamed.txt")],
         destination: root.child("Nested"),
         moving: false,
     });
-    until(|| !browser.conflict_dialogs.borrow().is_empty());
-    browser
-        .task_rows
-        .borrow()
-        .last()
-        .unwrap()
-        .cancel
-        .emit_clicked();
-    until(|| browser.jobs.borrow().is_empty() && browser.window.visible_dialog().is_none());
+    until(|| browser.task_rows.borrow().len() > task_count);
+    let task = browser.task_rows.borrow().last().unwrap().clone();
+    until(|| {
+        browser
+            .conflict_dialogs
+            .borrow()
+            .iter()
+            .any(|(token, _)| token == &task.token)
+    });
+    task.cancel.emit_clicked();
+    until_described(
+        || {
+            task.done.get()
+                && browser.jobs.borrow().is_empty()
+                && !browser.undo_history.borrow().busy
+        },
+        || {
+            format!(
+                "cancelled copy: done={}, jobs={}, busy={}, conflicts={}, dialog={:?}",
+                task.done.get(),
+                browser.jobs.borrow().len(),
+                browser.undo_history.borrow().busy,
+                browser.conflict_dialogs.borrow().len(),
+                stage3_dialog_details(browser)
+            )
+        },
+    );
+    assert!(task.token.is_cancelled());
+    if expect_local_notice {
+        let expected = tr(
+            "Some tags are stored locally because file attributes could not be written. They will be retried when the files are available.",
+        );
+        until_described(
+            || stage3_dialog_details(browser).as_deref() == Some(expected.as_str()),
+            || {
+                format!(
+                    "expected local tag notice after cancellation, got {:?}",
+                    stage3_dialog_details(browser)
+                )
+            },
+        );
+        assert!(browser.local_tags_notice.get());
+        respond(browser, "Close");
+    }
+    until_described(
+        || {
+            browser.conflict_dialogs.borrow().is_empty()
+                && browser.window.visible_dialog().is_none()
+        },
+        || {
+            format!(
+                "dialogs left after cancellation: conflicts={}, dialog={:?}",
+                browser.conflict_dialogs.borrow().len(),
+                stage3_dialog_details(browser)
+            )
+        },
+    );
     assert_eq!(
         fs::read_to_string(temp.path().join("Nested/renamed.txt")).unwrap(),
         "keep destination"
@@ -166,7 +242,7 @@ fn stage3_acceptance(browser: &Rc<Browser>) {
         root.child("missing-parent"),
         "retry-created".into(),
     ));
-    until(|| browser.jobs.borrow().is_empty());
+    until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
     until(|| browser.window.visible_dialog().is_some());
     close_dialog(browser);
     let failed = browser.task_rows.borrow().last().unwrap().clone();
@@ -179,7 +255,7 @@ fn stage3_acceptance(browser: &Rc<Browser>) {
     );
     fs::create_dir(temp.path().join("missing-parent")).unwrap();
     failed.retry.emit_clicked();
-    until(|| browser.jobs.borrow().is_empty());
+    until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
     assert!(temp.path().join("missing-parent/retry-created").is_dir());
     file_commands_acceptance(browser);
     stage3_network_acceptance(browser);
@@ -211,7 +287,7 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
             destination: local.clone(),
             moving: false,
         });
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(
             browser.window.visible_dialog().is_none(),
             "download failed: {:?}",
@@ -233,27 +309,27 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
             destination: root.clone(),
             moving: false,
         });
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none(), "upload failed");
         browser.enqueue(Operation::Rename(
             root.child("upload.txt"),
             "renamed-remote.txt".into(),
         ));
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         browser.enqueue(Operation::Copy {
             sources: vec![root.child("renamed-remote.txt")],
             destination: root.child("Folder"),
             moving: true,
         });
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         browser.enqueue(Operation::Copy {
             sources: vec![root.child("Folder/renamed-remote.txt")],
             destination: local.clone(),
             moving: false,
         });
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         assert_eq!(
             fs::read_to_string(temp.path().join("renamed-remote.txt")).unwrap(),
@@ -262,7 +338,7 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
         browser.enqueue(Operation::Delete(vec![
             root.child("Folder/renamed-remote.txt"),
         ]));
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         let image = gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 32, 24)
             .unwrap();
@@ -275,7 +351,7 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
             destination: root.clone(),
             moving: false,
         });
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         browser.navigate(root.clone(), HashSet::new());
         action(browser, "view-3");
@@ -313,7 +389,7 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
             },
         );
         browser.enqueue(Operation::Delete(vec![root.child("preview.png")]));
-        until(|| browser.jobs.borrow().is_empty());
+        until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
         assert!(browser.window.visible_dialog().is_none());
         if variable.ends_with("SMB") {
             let readonly = gio::File::for_uri(&uri.replace("/share", "/readonly"));
@@ -324,7 +400,7 @@ fn stage3_network_acceptance(browser: &Rc<Browser>) {
                 destination: readonly,
                 moving: false,
             });
-            until(|| browser.jobs.borrow().is_empty());
+            until(|| browser.jobs.borrow().is_empty() && !browser.undo_history.borrow().busy);
             until(|| browser.window.visible_dialog().is_some());
             assert!(
                 !browser
@@ -458,4 +534,21 @@ fn widget_text(widget: &gtk::Widget) -> String {
         child = widget.next_sibling();
     }
     text
+}
+
+#[test]
+#[ignore = "requires a GTK display; run tools/fixtures/gui.sh stage3_gui"]
+fn stage3_gui() {
+    adw::init().unwrap();
+    gio::resources_register_include!("finder.gresource").unwrap();
+    let app = adw::Application::builder()
+        .application_id("io.github.finder_gnome.Stage3Tests")
+        .build();
+    app.register(gio::Cancellable::NONE).unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let browser = Browser::new(&app, gio::File::for_path(temp.path()));
+    browser.window.present();
+    loaded(&browser);
+    stage3_acceptance(&browser);
+    browser.window.close();
 }
