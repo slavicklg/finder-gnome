@@ -28,6 +28,9 @@ use crate::{
     },
 };
 
+const MIN_COLUMN_WIDTH: i32 = 180;
+const COLUMN_RESIZE_HANDLE_WIDTH: i32 = 6;
+
 #[derive(Clone)]
 enum SidebarLocation {
     Folder(gio::File),
@@ -143,6 +146,7 @@ struct Pane {
     connection_cancel: RefCell<gio::Cancellable>,
     notice: RefCell<String>,
     writable: Cell<Option<bool>>,
+    fit_width: Option<gtk::Button>,
 }
 
 fn item(object: &glib::Object) -> FileItem {
@@ -317,6 +321,8 @@ impl Browser {
         let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         content.add_css_class("content");
         let columns_scroll = gtk::ScrolledWindow::builder()
+            // Keep the horizontal scrollbar below the column footer buttons.
+            .overlay_scrolling(false)
             .hexpand(true)
             .vexpand(true)
             .hscrollbar_policy(gtk::PolicyType::Never)
@@ -652,6 +658,7 @@ impl Browser {
         let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         content.add_css_class("content");
         let scroll = gtk::ScrolledWindow::builder()
+            .overlay_scrolling(false)
             .child(&content)
             .hexpand(true)
             .vexpand(true)
@@ -1972,13 +1979,9 @@ impl Browser {
         error_box.append(&error);
         error_box.append(&retry);
         stack.add_named(&error_box, Some("error"));
-        let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        widget.set_hexpand(self.mode.get() != ViewMode::Columns);
-        widget.set_vexpand(true);
-        if self.mode.get() == ViewMode::Columns {
-            widget.set_width_request(self.folder_settings.borrow().column_pane_width);
-            widget.add_css_class("column-pane");
-        }
+        let body = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        body.set_hexpand(true);
+        body.set_vexpand(true);
         if files::is_trash(&model.file) {
             let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 8);
             toolbar.set_margin_start(12);
@@ -2004,9 +2007,36 @@ impl Browser {
                     .action_name("win.empty-trash")
                     .build(),
             );
-            widget.append(&toolbar);
+            body.append(&toolbar);
         }
-        widget.append(&stack);
+        body.append(&stack);
+        let fit_width = (self.mode.get() == ViewMode::Columns).then(|| {
+            let button = gtk::Button::builder()
+                .icon_name("zoom-fit-best-symbolic")
+                .tooltip_text(tr("Fit Column Width"))
+                .sensitive(false)
+                .build();
+            button.add_css_class("flat");
+            button.add_css_class("column-fit-width");
+            let footer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            footer.add_css_class("column-footer");
+            button.set_halign(gtk::Align::End);
+            button.set_hexpand(true);
+            footer.append(&button);
+            body.append(&footer);
+            button
+        });
+        let widget = if self.mode.get() == ViewMode::Columns {
+            let widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            widget.set_hexpand(false);
+            widget.set_vexpand(true);
+            widget.set_width_request(self.folder_settings.borrow().column_pane_width);
+            widget.add_css_class("column-pane");
+            widget.append(&body);
+            widget
+        } else {
+            body
+        };
         let pane = Rc::new(Pane {
             model: model.clone(),
             widget,
@@ -2028,7 +2058,29 @@ impl Browser {
             connection_cancel: RefCell::new(gio::Cancellable::new()),
             notice: RefCell::new(String::new()),
             writable: Cell::new(None),
+            fit_width,
         });
+        if let Some(button) = &pane.fit_width {
+            pane.install_column_resize();
+            let weak_pane = Rc::downgrade(&pane);
+            button.connect_clicked(move |_| {
+                if let Some(pane) = weak_pane.upgrade() {
+                    pane.fit_column_width();
+                }
+            });
+            let weak_pane = Rc::downgrade(&pane);
+            pane.stack.connect_visible_child_name_notify(move |_| {
+                if let Some(pane) = weak_pane.upgrade() {
+                    pane.update_fit_width_button();
+                }
+            });
+            let weak_pane = Rc::downgrade(&pane);
+            pane.sorted.connect_items_changed(move |_, _, _, _| {
+                if let Some(pane) = weak_pane.upgrade() {
+                    pane.update_fit_width_button();
+                }
+            });
+        }
         let view = match self.mode.get() {
             ViewMode::Icons => self.icon_view(&pane),
             ViewMode::List => self.list_view(&pane),
@@ -2248,6 +2300,7 @@ impl Browser {
                     pane.stack.set_visible_child_name("error");
                 }
             }
+            pane.update_fit_width_button();
             browser.update_status();
         });
         let weak_pane = Rc::downgrade(&pane);
@@ -2308,12 +2361,60 @@ impl Browser {
             self.content.borrow().append(&child.widget);
             self.panes.borrow_mut().push(child.clone());
             child.model.reload();
-            let scroll = self.columns_scroll.borrow().clone();
-            glib::idle_add_local_once(move || {
-                let a = scroll.hadjustment();
-                a.set_value(a.upper());
-            });
+            self.reveal_column(&child);
         }
+    }
+
+    fn reveal_column(self: &Rc<Self>, pane: &Rc<Pane>) {
+        if self.replaying.get() {
+            return;
+        }
+        let weak_browser = Rc::downgrade(self);
+        let weak_pane = Rc::downgrade(pane);
+        // An idle callback can run before GTK has allocated the new column and
+        // updated the adjustment. Wait for a frame with its actual bounds.
+        self.columns_scroll
+            .borrow()
+            .add_tick_callback(move |scroll, _| {
+                let (Some(browser), Some(pane)) = (weak_browser.upgrade(), weak_pane.upgrade())
+                else {
+                    return glib::ControlFlow::Break;
+                };
+                if browser.mode.get() != ViewMode::Columns
+                    || *browser.columns_scroll.borrow() != *scroll
+                    || !browser
+                        .panes
+                        .borrow()
+                        .last()
+                        .is_some_and(|last| Rc::ptr_eq(last, &pane))
+                {
+                    return glib::ControlFlow::Break;
+                }
+                let content = browser.content.borrow();
+                let Some(bounds) = pane.widget.compute_bounds(&*content) else {
+                    return glib::ControlFlow::Continue;
+                };
+                let adjustment = scroll.hadjustment();
+                let left = f64::from(bounds.x());
+                let right = left + f64::from(bounds.width());
+                let page = adjustment.page_size();
+                if pane.widget.width() == 0 || page <= 0.0 || right > adjustment.upper() + 1.0 {
+                    return glib::ControlFlow::Continue;
+                }
+                let current = adjustment.value();
+                let target = if f64::from(bounds.width()) > page || left < current {
+                    left
+                } else if right > current + page {
+                    right - page
+                } else {
+                    current
+                };
+                adjustment.set_value(target.clamp(
+                    adjustment.lower(),
+                    (adjustment.upper() - page).max(adjustment.lower()),
+                ));
+                glib::ControlFlow::Break
+            });
     }
 
     fn activation(self: &Rc<Self>, pane: &Rc<Pane>, position: u32) {
@@ -3337,6 +3438,130 @@ impl Drop for Pane {
 }
 
 impl Pane {
+    fn install_column_resize(self: &Rc<Self>) {
+        let handle = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        handle.add_css_class("column-resize-handle");
+        handle.set_width_request(COLUMN_RESIZE_HANDLE_WIDTH);
+        handle.set_vexpand(true);
+        handle.set_cursor_from_name(Some("col-resize"));
+        handle.set_tooltip_text(Some(&tr("Drag to Resize Column")));
+        self.widget.append(&handle);
+
+        let drag = gtk::GestureDrag::new();
+        drag.set_button(gdk::BUTTON_PRIMARY);
+        let start = Rc::new(Cell::new(None::<(f64, i32)>));
+        let weak_pane = Rc::downgrade(self);
+        let state = start.clone();
+        drag.connect_drag_begin(move |gesture, _, _| {
+            let Some(pane) = weak_pane.upgrade() else {
+                return;
+            };
+            let Some((x, _)) = gesture.current_event().and_then(|event| event.position()) else {
+                return;
+            };
+            // Event coordinates are relative to the surface, so moving the
+            // handle during resize does not feed back into the pointer delta.
+            let width = pane
+                .widget
+                .compute_bounds(&pane.widget)
+                .map(|bounds| bounds.width().round() as i32)
+                .unwrap_or(pane.widget.width_request());
+            state.set(Some((x, width)));
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            if let Some(handle) = gesture.widget() {
+                handle.add_css_class("resizing");
+            }
+        });
+        let weak_pane = Rc::downgrade(self);
+        let state = start.clone();
+        drag.connect_drag_update(move |gesture, _, _| {
+            let (Some(pane), Some((start_x, width)), Some((x, _))) = (
+                weak_pane.upgrade(),
+                state.get(),
+                gesture.current_event().and_then(|event| event.position()),
+            ) else {
+                return;
+            };
+            pane.resize_column(width, x - start_x);
+        });
+        let state = start.clone();
+        drag.connect_drag_end(move |gesture, _, _| {
+            state.set(None);
+            if let Some(handle) = gesture.widget() {
+                handle.remove_css_class("resizing");
+            }
+        });
+        drag.connect_cancel(move |gesture, _| {
+            start.set(None);
+            if let Some(handle) = gesture.widget() {
+                handle.remove_css_class("resizing");
+            }
+        });
+        handle.add_controller(drag);
+    }
+
+    fn resize_column(&self, start_width: i32, delta: f64) {
+        if self.fit_width.is_some() && delta.is_finite() {
+            let width = (f64::from(start_width) + delta).round() as i32;
+            self.widget.set_width_request(width.max(MIN_COLUMN_WIDTH));
+        }
+    }
+
+    fn can_fit_column_width(&self) -> bool {
+        !self.loading.get()
+            && self.sorted.n_items() > 0
+            && self.stack.visible_child_name().as_deref() == Some("files")
+    }
+
+    fn update_fit_width_button(&self) {
+        if let Some(button) = &self.fit_width {
+            button.set_sensitive(self.can_fit_column_width());
+        }
+    }
+
+    fn fit_column_width(&self) {
+        if self.fit_width.is_none() || !self.can_fit_column_width() {
+            return;
+        }
+        // Measure the same row widgets as the view, with ellipsizing disabled.
+        // Rooting the probe here gives Pango the column's font, theme and scale.
+        // It is removed synchronously, before GTK can draw or allocate it.
+        let row = name_row(false);
+        let label = row
+            .first_child()
+            .unwrap()
+            .next_sibling()
+            .unwrap()
+            .downcast::<gtk::Label>()
+            .unwrap();
+        label.set_ellipsize(gtk::pango::EllipsizeMode::None);
+        label.set_max_width_chars(-1);
+        let badges = row.last_child().unwrap().downcast::<gtk::Label>().unwrap();
+        badges.set_ellipsize(gtk::pango::EllipsizeMode::None);
+        self.widget.append(&row);
+        let mut width = 0;
+        for position in 0..self.sorted.n_items() {
+            if let Some(object) = self.sorted.item(position) {
+                bind_name_row(&row, &item(&object), false);
+                width = width.max(row.measure(gtk::Orientation::Horizontal, -1).1);
+            }
+        }
+        self.widget.remove(&row);
+        // Use a full scrollbar probe: an overlay scrollbar's current width
+        // varies on hover, so measuring it would make repeated clicks unstable.
+        let scrollbar = gtk::Scrollbar::new(gtk::Orientation::Vertical, None::<&gtk::Adjustment>);
+        self.widget.append(&scrollbar);
+        let scrollbar_width = scrollbar.measure(gtk::Orientation::Horizontal, -1).1;
+        self.widget.remove(&scrollbar);
+        // Reserve a scrollbar even with overlay scrolling, plus the pane border.
+        self.widget.set_width_request(
+            width
+                .saturating_add(scrollbar_width.max(12))
+                .saturating_add(1 + COLUMN_RESIZE_HANDLE_WIDTH)
+                .max(MIN_COLUMN_WIDTH),
+        );
+    }
+
     fn ensure_context_menu(&self) -> gtk::PopoverMenu {
         let mut menu = self.context_menu.borrow_mut();
         let popover = menu.get_or_insert_with(|| {
@@ -3375,84 +3600,92 @@ fn name_factory(icons: bool) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(move |_, object| {
         let list_item = object.downcast_ref::<gtk::ListItem>().unwrap();
-        let row = gtk::Box::new(
-            if icons {
-                gtk::Orientation::Vertical
-            } else {
-                gtk::Orientation::Horizontal
-            },
-            if icons { 6 } else { 8 },
-        );
-        row.add_css_class(if icons { "file-tile" } else { "file-row" });
-        let image = gtk::Image::new();
-        image.set_pixel_size(if icons { 56 } else { 20 });
-        row.append(&image);
-        let label = gtk::Label::builder()
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .max_width_chars(if icons { 15 } else { 40 })
-            .xalign(if icons { 0.5 } else { 0.0 })
-            .hexpand(true)
-            .build();
-        if icons {
-            label.set_wrap(true);
-            label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
-            label.set_lines(2);
-        }
-        row.append(&label);
-        if !icons {
-            row.append(&gtk::Image::from_icon_name("go-next-symbolic"));
-        }
-        let badges = gtk::Label::builder()
-            .use_markup(true)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .build();
-        row.append(&badges);
-        list_item.set_child(Some(&row));
+        list_item.set_child(Some(&name_row(icons)));
     });
     factory.connect_bind(move |_, object| {
         let list_item = object.downcast_ref::<gtk::ListItem>().unwrap();
         let file = item(&list_item.item().unwrap());
         let row = list_item.child().unwrap().downcast::<gtk::Box>().unwrap();
         row.set_widget_name(&format!("finder-item-{}", list_item.position()));
-        let image = row.first_child().unwrap().downcast::<gtk::Image>().unwrap();
-        image.set_from_gicon(&file.icon);
-        let label = image
-            .next_sibling()
-            .unwrap()
-            .downcast::<gtk::Label>()
-            .unwrap();
-        label.set_label(&file.name);
-        row.set_tooltip_text(Some(&format!(
-            "{}\n{}\n{}",
-            file.name,
-            file.file.parse_name(),
-            file.location_hint
-        )));
-        let badges = row.last_child().unwrap().downcast::<gtk::Label>().unwrap();
-        let mut markup = file
-            .tags
-            .iter()
-            .map(|(name, color)| {
-                format!(
-                    "<span foreground=\"{}\">●</span> {}",
-                    glib::markup_escape_text(color),
-                    glib::markup_escape_text(name)
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(" ");
-        if !file.location_hint.is_empty() {
-            if !markup.is_empty() {
-                markup.push('\n');
-            }
-            markup.push_str(&glib::markup_escape_text(&file.location_hint));
-        }
-        badges.set_markup(&markup);
-        if !icons {
-            label.next_sibling().unwrap().set_visible(file.is_dir);
-        }
+        bind_name_row(&row, &file, icons);
     });
     factory
+}
+
+fn name_row(icons: bool) -> gtk::Box {
+    let row = gtk::Box::new(
+        if icons {
+            gtk::Orientation::Vertical
+        } else {
+            gtk::Orientation::Horizontal
+        },
+        if icons { 6 } else { 8 },
+    );
+    row.add_css_class(if icons { "file-tile" } else { "file-row" });
+    let image = gtk::Image::new();
+    image.set_pixel_size(if icons { 56 } else { 20 });
+    row.append(&image);
+    let label = gtk::Label::builder()
+        .ellipsize(gtk::pango::EllipsizeMode::End)
+        .max_width_chars(if icons { 15 } else { 40 })
+        .xalign(if icons { 0.5 } else { 0.0 })
+        .hexpand(true)
+        .build();
+    if icons {
+        label.set_wrap(true);
+        label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+        label.set_lines(2);
+    }
+    row.append(&label);
+    if !icons {
+        row.append(&gtk::Image::from_icon_name("go-next-symbolic"));
+    }
+    let badges = gtk::Label::builder()
+        .use_markup(true)
+        .ellipsize(gtk::pango::EllipsizeMode::End)
+        .build();
+    row.append(&badges);
+    row
+}
+
+fn bind_name_row(row: &gtk::Box, file: &FileItem, icons: bool) {
+    let image = row.first_child().unwrap().downcast::<gtk::Image>().unwrap();
+    image.set_from_gicon(&file.icon);
+    let label = image
+        .next_sibling()
+        .unwrap()
+        .downcast::<gtk::Label>()
+        .unwrap();
+    label.set_label(&file.name);
+    row.set_tooltip_text(Some(&format!(
+        "{}\n{}\n{}",
+        file.name,
+        file.file.parse_name(),
+        file.location_hint
+    )));
+    let badges = row.last_child().unwrap().downcast::<gtk::Label>().unwrap();
+    let mut markup = file
+        .tags
+        .iter()
+        .map(|(name, color)| {
+            format!(
+                "<span foreground=\"{}\">●</span> {}",
+                glib::markup_escape_text(color),
+                glib::markup_escape_text(name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    if !file.location_hint.is_empty() {
+        if !markup.is_empty() {
+            markup.push('\n');
+        }
+        markup.push_str(&glib::markup_escape_text(&file.location_hint));
+    }
+    badges.set_markup(&markup);
+    if !icons {
+        label.next_sibling().unwrap().set_visible(file.is_dir);
+    }
 }
 
 fn detail_factory(field: usize) -> gtk::SignalListItemFactory {
@@ -3565,6 +3798,7 @@ fn main_menu(history: &gio::Menu) -> gio::Menu {
 mod tests {
     use super::*;
     include!("ui/context_menu_tests.rs");
+    include!("ui/column_width_tests.rs");
     include!("ui/stage2_tests.rs");
     include!("ui/stage3_tests.rs");
     include!("ui/trash_tests.rs");

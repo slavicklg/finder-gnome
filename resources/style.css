@@ -11,6 +11,11 @@ window.finder { background: @window_bg_color; }
 .finder gridview > child { border-radius: 8px; margin: 4px; }
 .finder .file-row { padding: 6px 10px; }
 .finder .column-pane { border-right: 1px solid @borders; }
+.finder .column-resize-handle:hover, .finder .column-resize-handle.resizing { background: alpha(@accent_bg_color, .25); }
+/* Keep list item padding in .file-row so width measurement matches the view. */
+.finder .column-pane listview > row { padding: 0; }
+.finder .column-footer { border-top: 1px solid alpha(@borders, .5); padding: 2px 4px; }
+.finder .column-fit-width { padding: 2px 5px; min-height: 20px; min-width: 20px; }
 .finder .statusbar { padding: 7px 14px; border-top: 1px solid @borders; font-size: 12px; }
 .finder .operation-panel { padding: 12px 16px; border-top: 1px solid @borders; }
 .finder .breadcrumbs { padding: 2px 8px; border-bottom: 1px solid alpha(@borders, .5); }
